@@ -1,0 +1,8 @@
+{
+  "markdown.marp.themes": [
+    "./slides/themes/default.css",
+    "./slides/themes/schema.css",
+    "./slides/themes/structure.css",
+    "./slides/themes/jobs.css",
+  ],
+}

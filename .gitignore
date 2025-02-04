@@ -1,0 +1,4 @@
+#ignore generated files
+*.html
+*.pdf
+node_modules
