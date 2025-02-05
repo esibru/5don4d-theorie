@@ -194,13 +194,57 @@ Conteneurisation avec Docker
 **Docker** est une plateforme qui permet de créer, déployer et exécuter des applications dans des conteneurs légers, portables et isolés. Ces **conteneurs** regroupent tout ce dont une application a besoin pour fonctionner garantissant qu'elle s'exécute de manière cohérente, quelle que soit l'environnement.
 
 ---
+# Exemple : Tester Wordpress sous Ubuntu
 
-# Docker : Motivations
+<div class="columns">
+<div>
 
-- Faciliter le déploiement des applications.
-- Assurer la portabilité entre les environnements.
-- Optimiser l’utilisation des ressources.
-- Faciliter l’isolation et la gestion des dépendances.
+## Installation native
+
+[Description détaillée via ce lien](https://developer.wordpress.org/advanced-administration/before-install/)
+
+1. Installer apache
+1. Installer PHP
+1. Installer mysql
+1. Créer une base de données
+1. Télécharger WordPress
+1. Configurer Wordpress
+
+
+</div>
+<div>
+
+## Installation Docker
+
+1. Créer un fichier `docker-compose.yml`
+1. Copier le contenu du fichier de [Docker Hub](https://hub.docker.com/_/wordpressl)
+1. Démarrer Wordpress via `docker-compose up -d`
+
+</div>
+</div>
+
+---
+# Installation Native vs Docker
+
+|               | Installation native | Via Docker |
+|---------------|----------------------|--------------|
+| Simplicité    | Complexe (packages, dépendances) | Très simple (une commande) |
+| Isolation     | Nécessite configuration spécifique | Complètement isolé |
+| Portabilité   | Dépend de l’OS et du package manager | Fonctionne partout |
+| Maintenance   | Mise à jour manuelle | Facile avec les images Docker |
+
+
+---
+
+# Différences avec une Machine Virtuelle
+
+| Critère         | Machine Virtuelle    | Docker |
+|-----------------|----------------------|----------|
+| Isolation       | Complète (OS dédié)  | Processus isolés |
+| Poids           | Lourd (Giga Octets)  | Léger (Méga Octets) |
+| Performance     | Moins performant     | Plus performant |
+| Démarrage       | Lent (minutes)       | Rapide (secondes) |
+
 
 --- 
 
@@ -218,10 +262,10 @@ Conteneurisation avec Docker
 </div>
 <div>
 
-- **Docker Client** : Interface en ligne de commande ou graphique permettant d’interagir avec Docker.
-- **Docker Daemon (dockerd)** : Service de fond qui gère les conteneurs, images et réseaux.
-- **Docker Registry** : Stocke et distribue les images Docker (ex. Docker Hub, GitHub Container Registry).
 - **Docker Engine** : Composant central assurant l'exécution des conteneurs.
+  - **Docker Client** : Interface en ligne de commande ou graphique permettant d’interagir avec Docker.
+  - **Docker Daemon (dockerd)** : Service de fond qui gère les conteneurs, images et réseaux.
+- **Docker Registry** : Stocke et distribue les images Docker (ex. Docker Hub, GitHub Container Registry).
 
 </div>
 </div>
@@ -258,32 +302,53 @@ Conteneurisation avec Docker
 
 # Docker Desktop
 
+<div class="columns">
+<div>
+
+<center>
+
+![h:350](./img/docker-desktop.png)
+
+
+</center>
+
+</div>
+<div>
+
 - Fournit une interface utilisateur pour gérer les conteneurs et images.
 - Intègre le moteur Docker sur MacOS et Windows.
 - Sur **Windows**, utilise **WSL 2** (ou Hyper-V si WSL 2 n'est pas activé).
 - Sur **MacOS**, utilise un **hyperviseur léger** basé sur Apple Hypervisor Framework.
 - Facilite l’accès aux registres Docker et aux extensions Docker.
 
----
-
-# Différences avec une Machine Virtuelle
-
-| Critère          | Machine Virtuelle 🖥️ | Docker 🐳 |
-|-----------------|---------------------|----------|
-| Isolation       | Complète (OS dédié) | Processus isolés |
-| Poids          | Lourd (Giga Octets)  | Léger (Méga Octets) |
-| Performance    | Moins performant    | Plus performant |
-| Démarrage      | Lent (minutes)      | Rapide (secondes) |
+</div>
+</div>
 
 ---
 
 # Registres Docker
+
+<div class="columns">
+<div>
+
+<center>
+
+![h:350](./img/docker-hub.png)
+
+
+</center>
+
+</div>
+<div>
 
 - Stockent et distribuent des **images Docker**
 - Exemples : 
   - **Docker Hub** *(public)* : registre par défaut
   - GitHub Container Registry
   - AWS ECR, Azure ACR *(privés)*
+
+</div>
+</div>
 
 ---
 
@@ -294,38 +359,48 @@ Conteneurisation avec Docker
 - Création avec un **Dockerfile**
 - Les images sont souvent versionnées avec des **tags** (ex. `postgres:15`, `postgres:latest`)
 - `latest` pointe vers la version par défaut si aucun tag n’est spécifié.
+- Téléchargeable via une commande du type `docker pull postgres:15`
 
-```bash
-docker pull postgres:15
-```
 ---
 
 # Informations sur l'image
 
-- Commande pour lister les images locales
+Lister les images locales via`docker image ls`
 
-```bash
-docker image ls
-```
 ```bash
 REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
 postgres     15        19f99b135e18   2 months ago   426MB
 ```
 
-- [Informations complètes sur Docker Hub](https://hub.docker.com/_/postgres/) ou `docker image inspect postgres:15`
+[Informations complètes sur une image accessible via Docker Hub](https://hub.docker.com/_/postgres/) ou `docker image inspect postgres:15`
 
 ---
 
 # Images Docker Officielles ✅
 
+<div class="columns">
+<div>
+
+<center>
+
+![h:350](./img/docker-official-jre.png)
+
+</center>
+
+</div>
+<div>
+
 - Maintenues par l’éditeur officiel ou la communauté Docker
 - Sécurisées et mises à jour régulièrement
-- Exemples : `postgres`, `nginx`, `node`, `python`
+- Exemples : 
+  - `postgres`
+  - `nginx`
+  - `node`
+  - `python`
+  - `java`
 
-```bash
-docker pull postgres:latest
-```
-
+</div>
+</div>
 
 ---
 
@@ -333,6 +408,8 @@ docker pull postgres:latest
 
 - Une image Docker dépend entre autre de l’OS sous-jacent
 - Par exemple les versions **Alpine** sont plus légères
+- Alpine Linux est une distribution Linux ultra-légère, orientée sécurité 
+
 
 ```bash
 REPOSITORY   TAG         IMAGE ID       CREATED        SIZE
