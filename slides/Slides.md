@@ -365,7 +365,7 @@ Conteneurisation avec Docker
 
 # Informations sur l'image
 
-Lister les images locales via`docker image ls`
+Lister les images locales via `docker image ls`
 
 ```bash
 REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
@@ -404,11 +404,11 @@ postgres     15        19f99b135e18   2 months ago   426MB
 
 ---
 
-# Taille des Images
+# Taille des images
 
 - Une image Docker dépend entre autre de l’OS sous-jacent
 - Par exemple les versions **Alpine** sont plus légères
-- Alpine Linux est une distribution Linux ultra-légère, orientée sécurité 
+- Alpine Linux est une distribution Linux ultra-légère
 
 
 ```bash
@@ -422,28 +422,78 @@ postgres     15          19f99b135e18   2 months ago   426MB
 # Conteneurs
 
 - Instances exécutables d’une **image Docker**.
-- Isolés mais légers.
-- Peuvent être arrêtés, redémarrés, supprimés.
+- Isolés et légers.
+- Peuvent être arrêtés, redémarrés, supprimés via leur nom ou leur ID.
 
 ```bash
-docker run -d -p 5432:5432 postgres:15
+docker run    python:latest
+docker stop   keen_banach
+docker start  keen_banach
+docker rm     keen_banach
 ```
 
 ---
 
-# Exécution des Conteneurs
+# Nommage des conteneurs
 
-- **Démarrer un conteneur pour la première fois** :
+- Chaque conteneur peut être nommé pour une identification plus facile.
+- Utilisation de `--name` lors du démarrage d’un conteneur :
 ```bash
-docker run -d -p 5432:5432 --name db -e POSTGRES_PASSWORD=secret postgres:15
+docker run --name mon_postgres postgres:15
 ```
-- **Lister les conteneurs actifs** :
+- Un conteneur nommé est plus facile à gérer pour les commandes comme `docker stop`
+
+---
+
+# Que se passe-t-il si aucun nom n’est attribué ?
+
+- Docker génère automatiquement un nom aléatoire.
+- Les noms sont composés de deux mots (ex: `eager_tesla`).
+- Pour voir le nom généré :
 ```bash
 docker ps
 ```
-- **Arrêter un conteneur** :
+- Exemple de sortie :
 ```bash
-docker stop <ID>
+CONTAINER ID   NAME          IMAGE        STATUS
+f2d1a4f3c2f3  eager_tesla  postgres:15  Up 2 minutes
+```
+- Il est recommandé d’attribuer un nom explicite pour une meilleure gestion.
+
+---
+
+# Binding des ports
+
+- Le binding des ports permet de rediriger un port de l’hôte vers un port du conteneur.
+- Syntaxe : `-p <port_hôte>:<port_conteneur>`
+- Exemple avec PostgreSQL :
+```bash
+docker run -p 5432:5432 postgres:15
+```
+
+- Pour voir les ports exposés :
+```bash
+docker ps
+```
+
+---
+
+# Variables d’environnement dans les conteneurs
+
+- Permettent de configurer des paramètres sans modifier l’image
+- Exemples pour PostgreSQL :
+  - `POSTGRES_USER` : Nom d’utilisateur par défaut
+  - `POSTGRES_PASSWORD` : Mot de passe de l’utilisateur
+  - `POSTGRES_DB` : Nom de la base de données par défaut
+
+```bash
+docker run \
+  --name postgres \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=secret \
+  -e POSTGRES_DB=mydatabase \
+  -p 5432:5432 \
+  postgres:15
 ```
 
 ---
@@ -452,11 +502,24 @@ docker stop <ID>
 
 - **Voir les logs en temps réel** :
 ```bash
-docker logs -f <ID>
+docker logs -f <name>
 ```
 - **Afficher les dernières lignes** :
 ```bash
-docker logs --tail 100 <ID>
+docker logs --tail 100 <name>
+```
+
+---
+
+# Exécuter une requête dans PostgreSQL
+
+- Vérifier le nom du conteneur PostgreSQL :
+```bash
+docker ps
+```
+- Se connecter au conteneur et exécuter une requête SQL :
+```bash
+docker exec -it postgres psql -U admin -d mydatabase -c "SELECT NOW();"
 ```
 
 ---
@@ -525,15 +588,11 @@ FROM postgres:15
 # Image Layers et historique
 
 - Une image est composée de plusieurs **layers** (couches)
-- Voir l’historique des layers :
-
-```bash
-docker history <image>
-```
+- Couche consultable via `docker history <image>`
 
 ---
 
-# Liens couches-Dockerfile
+# Liens Layers-Dockerfile
 
 ```Dockerfile 
 # Utilisation de l'image Ubuntu comme base
@@ -559,7 +618,7 @@ IMAGE          CREATED          CREATED BY                                      
 ```
 
 ---
-# Single-Stage - Partie 1
+# Image classique : Single-Stage - Partie 1
 
 ```dockerfile
 # Utilisation d'une image contenant Maven et JDK 17
@@ -573,7 +632,7 @@ COPY pom.xml .
 COPY src ./src
 ```
 ---
-# Single-Stage - Partie 2
+# Image classique : Single-Stage - Partie 2
 
 ```dockerfile
 # Compiler l'application
@@ -588,7 +647,7 @@ CMD ["java", "-jar", "target/app.jar"]
 
 ---
 
-# Multi-Stage Build - Partie 1 
+# Image avancée : Multi-Stage Build - Partie 1 
 
 ```dockerfile
 # Étape 1 : Construction de l'application avec Maven
@@ -607,7 +666,7 @@ RUN mvn clean package -DskipTests
 
 ---
 
-# Multi-Stage Build - Partie 2
+# Image avancée : Multi-Stage Build - Partie 2
 
 ```dockerfile
 # Étape 2 : Création d'une image légère pour l'exécution
@@ -647,6 +706,13 @@ image-single-stage   latest    4068a159c3d2   36 seconds ago   599MB
 Docker-compose
 
 --- 
+
+<!--
+- application microservices
+- kubernetes
+-->  
+
+---
 
 <div>         
  
