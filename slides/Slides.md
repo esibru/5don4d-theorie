@@ -272,7 +272,7 @@ Conteneurisation avec Docker
 
 ---
 
-# Installer Docker
+# Installation :  Docker
 
 <div class="columns">
 <div>
@@ -300,7 +300,7 @@ Conteneurisation avec Docker
 
 ---
 
-# Docker Desktop
+# Installation : Docker Desktop
 
 <div class="columns">
 <div>
@@ -326,7 +326,7 @@ Conteneurisation avec Docker
 
 ---
 
-# Registres Docker
+# Concept clé 1 : Registres Docker
 
 <div class="columns">
 <div>
@@ -352,7 +352,7 @@ Conteneurisation avec Docker
 
 ---
 
-# Images Docker
+# Concept clé 2 : Images Docker
 
 - Contiennent tout le nécessaire pour exécuter une application (code, runtime, dépendances...)
 - Versionnées et partageables via des **registres**
@@ -419,7 +419,7 @@ postgres     15          19f99b135e18   2 months ago   426MB
 
 ---
 
-# Conteneurs
+# Concept clé 3 : Conteneurs
 
 - Instances exécutables d’une **image Docker**.
 - Isolés et légers.
@@ -524,7 +524,7 @@ docker exec -it postgres psql -U admin -d mydatabase -c "SELECT NOW();"
 
 ---
 
-# Dockerfile
+# Concept clé 4 : Dockerfile
 
 - Fichier permettant de créer une **image Docker personnalisée**
     - **FROM** : Spécifie l’image de base
@@ -618,7 +618,9 @@ IMAGE          CREATED          CREATED BY                                      
 ```
 
 ---
-# Image classique : Single-Stage - Partie 1
+# Single-Stage - Partie 1
+
+Image Docker construite en une seule étape, contenant à la fois les outils de compilation et l’application finale
 
 ```dockerfile
 # Utilisation d'une image contenant Maven et JDK 17
@@ -632,7 +634,7 @@ COPY pom.xml .
 COPY src ./src
 ```
 ---
-# Image classique : Single-Stage - Partie 2
+# Single-Stage - Partie 2
 
 ```dockerfile
 # Compiler l'application
@@ -647,7 +649,9 @@ CMD ["java", "-jar", "target/app.jar"]
 
 ---
 
-# Image avancée : Multi-Stage Build - Partie 1 
+# Multi-Stage Build - Partie 1 
+
+Une image Multi-Stage sépare la construction et l’exécution en plusieurs étapes, ne conservant que l’exécutable final dans une image allégée.
 
 ```dockerfile
 # Étape 1 : Construction de l'application avec Maven
@@ -666,7 +670,7 @@ RUN mvn clean package -DskipTests
 
 ---
 
-# Image avancée : Multi-Stage Build - Partie 2
+# Multi-Stage Build - Partie 2
 
 ```dockerfile
 # Étape 2 : Création d'une image légère pour l'exécution
@@ -705,13 +709,6 @@ image-single-stage   latest    4068a159c3d2   36 seconds ago   599MB
 
 Docker-compose
 
---- 
-
-<!--
-- application microservices
-- kubernetes
--->  
-
 ---
 
 <div>         
@@ -719,6 +716,143 @@ Docker-compose
 ![h:450px](./img/work-in-progress.jpeg)
    
 </div> 
+
+---
+
+## Qu'est-ce que Docker Compose ?
+
+Docker Compose est un outil permettant de définir et de gérer des applications multi-conteneurs à l'aide d'un fichier YAML. Il facilite le déploiement, la configuration et l'orchestration de services.
+
+---
+
+## Docker vs Docker Compose
+
+| Fonctionnalité       | Docker | Docker Compose |
+|---------------------|--------|---------------|
+| Gestion des conteneurs | Oui | Oui |
+| Orchestration multi-conteneurs | Non | Oui |
+| Configuration via YAML | Non | Oui |
+| Simplification du workflow | Non | Oui |
+
+---
+
+## Installation et Configuration
+
+### Installation de Docker Compose
+
+```sh
+# Sous Linux
+sudo apt update && sudo apt install docker-compose
+
+# Sous macOS (avec Homebrew)
+brew install docker-compose
+
+# Vérification de l'installation
+docker-compose --version
+```
+
+---
+
+## Liaison entre Postgres et PgAdmin4 sans Docker Compose
+
+```sh
+# Démarrage d'un conteneur PostgreSQL
+docker run -d \
+  --name postgres \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=admin \
+  -e POSTGRES_DB=mydb \
+  -p 5432:5432 \
+  postgres
+
+# Démarrage d'un conteneur PgAdmin4
+docker run -d \
+  --name pgadmin \
+  -e PGADMIN_DEFAULT_EMAIL=admin@admin.com \
+  -e PGADMIN_DEFAULT_PASSWORD=admin \
+  -p 5050:80 \
+  dpage/pgadmin4
+```
+
+---
+
+## Liaison entre Postgres et PgAdmin4 avec Docker Compose
+
+```yaml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres
+    container_name: postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+```
+
+---
+
+## Structure d’un fichier `docker-compose.yml`
+
+1. **Version** : Détermine la version du fichier Compose.
+2. **Services** : Définit les conteneurs et leurs configurations.
+3. **Networks** : Gère la communication entre conteneurs.
+4. **Volumes** : Persiste les données.
+
+---
+
+## Commandes essentielles
+
+```sh
+# Démarrer les services définis dans le fichier docker-compose.yml
+docker-compose up -d
+
+# Arrêter et supprimer les services
+docker-compose down
+
+# Lister les conteneurs en cours d'exécution
+docker-compose ps
+
+# Démarrer un service spécifique
+docker-compose start <service>
+
+# Arrêter un service spécifique
+docker-compose stop <service>
+```
+
+---
+
+## Docker Compose vs Kubernetes
+
+| Fonctionnalité | Docker Compose | Kubernetes |
+|---------------|---------------|------------|
+| Déploiement local rapide | Oui | Non |
+| Gestion avancée du scaling | Non | Oui |
+| Orchestration avancée | Non | Oui |
+| Utilisé en production | Non recommandé | Oui |
+
+---
+
+## Microservices et Docker Compose
+
+Docker Compose est un excellent outil pour organiser des microservices en développement. Il permet :
+- Une gestion simplifiée des dépendances.
+- Un déploiement rapide.
+- Une cohérence entre environnements de développement et de test.
 
 ---
 <!-- _class: transition2 -->  
