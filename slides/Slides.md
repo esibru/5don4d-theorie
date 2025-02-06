@@ -705,6 +705,47 @@ image-single-stage   latest    4068a159c3d2   36 seconds ago   599MB
 ```
 
 ---
+
+# Concept 5 : Les volumes
+
+Les volumes permettent de stocker les données de manière persistante.
+
+<div class="columns">
+<div>
+
+```yaml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres
+    container_name: postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: mydb
+
+```
+
+</div>  
+<div> 
+
+```yaml
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  db_data:
+```
+
+</div>    
+</div> 
+
+Les données PostgreSQL sont stockées de manière persistante.
+
+---
 <!-- _class: transition2 -->  
 
 Docker-compose
@@ -719,13 +760,28 @@ Docker-compose
 
 ---
 
-## Qu'est-ce que Docker Compose ?
+# Qu'est-ce que Docker Compose ?
+
+<div class="columns">
+<div>
+
+<center>
+
+![h:350](./img/docker-compose.jpg)
+
+</center>
+
+</div>
+<div>
 
 Docker Compose est un outil permettant de définir et de gérer des applications multi-conteneurs à l'aide d'un fichier YAML. Il facilite le déploiement, la configuration et l'orchestration de services.
 
+</div>
+</div>
+
 ---
 
-## Docker vs Docker Compose
+# Docker vs Docker Compose
 
 | Fonctionnalité       | Docker | Docker Compose |
 |---------------------|--------|---------------|
@@ -736,24 +792,31 @@ Docker Compose est un outil permettant de définir et de gérer des applications
 
 ---
 
-## Installation et Configuration
+# Installation et Configuration
 
-### Installation de Docker Compose
+### Linux
 
 ```sh
 # Sous Linux
 sudo apt update && sudo apt install docker-compose
 
-# Sous macOS (avec Homebrew)
-brew install docker-compose
-
 # Vérification de l'installation
 docker-compose --version
 ```
 
+### Windows et macOs
+
+Inclus dans Docker Desktop
+
 ---
 
-## Liaison entre Postgres et PgAdmin4 sans Docker Compose
+# Liaison entre Postgres et PgAdmin4
+
+<div class="columns">
+<div>
+
+### Première commande
+
 
 ```sh
 # Démarrage d'un conteneur PostgreSQL
@@ -765,6 +828,14 @@ docker run -d \
   -p 5432:5432 \
   postgres
 
+```
+
+</div>
+<div>
+
+### Seconde commande
+
+```bash
 # Démarrage d'un conteneur PgAdmin4
 docker run -d \
   --name pgadmin \
@@ -773,10 +844,17 @@ docker run -d \
   -p 5050:80 \
   dpage/pgadmin4
 ```
+</div>
+</div>
 
 ---
 
-## Liaison entre Postgres et PgAdmin4 avec Docker Compose
+# La solution Docker-compose
+
+<div class="columns">
+<div>
+
+### Première partie du fichier
 
 ```yaml
 version: '3.8'
@@ -791,7 +869,15 @@ services:
       POSTGRES_DB: mydb
     ports:
       - "5432:5432"
+```
 
+</div>
+<div>
+
+### Seconde partie du fichier
+
+
+```yaml
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
@@ -804,9 +890,12 @@ services:
       - postgres
 ```
 
+</div>
+</div>
+
 ---
 
-## Structure d’un fichier `docker-compose.yml`
+# Structure d’un fichier `docker-compose.yml`
 
 1. **Version** : Détermine la version du fichier Compose.
 2. **Services** : Définit les conteneurs et leurs configurations.
@@ -815,7 +904,7 @@ services:
 
 ---
 
-## Commandes essentielles
+# Commandes essentielles
 
 ```sh
 # Démarrer les services définis dans le fichier docker-compose.yml
@@ -836,7 +925,7 @@ docker-compose stop <service>
 
 ---
 
-## Docker Compose vs Kubernetes
+# Docker Compose vs Kubernetes
 
 | Fonctionnalité | Docker Compose | Kubernetes |
 |---------------|---------------|------------|
@@ -847,7 +936,7 @@ docker-compose stop <service>
 
 ---
 
-## Microservices et Docker Compose
+# Microservices et Docker Compose
 
 Docker Compose est un excellent outil pour organiser des microservices en développement. Il permet :
 - Une gestion simplifiée des dépendances.
