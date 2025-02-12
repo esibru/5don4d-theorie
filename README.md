@@ -2,6 +2,10 @@
 
 Ce dépôt contient les supports de l'activité *4DOP1TDR* : **Introduction aux pratiques DevOps : théorie**.
 
+## URL de publication
+
+Le résultat de ce projet est disponible en ligne sur : https://esibru.github.io/4dop1dr-theorie
+
 ## Inspiration
 
 Les styles des présentations sont repris du dépôt :  https://github.com/cunhapaulo/marpstyle

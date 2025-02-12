@@ -524,6 +524,17 @@ docker exec -it postgres psql -U admin -d mydatabase -c "SELECT NOW();"
 
 ---
 
+# Remarque docker exec -it
+
+L’option `-it` dans la commande est une combinaison de deux flags :
+
+- `-i` pour **interactive** : Garde l’entrée standard (stdin) ouverte, permettant d’interagir avec le conteneur.
+- `-t` pour **tty** (teletypewriter) : Alloue un terminal pseudo-TTY pour une expérience interactive. Permet aux programmes d’interagir comme s’ils étaient exécutés dans un véritable terminal (affichage des couleurs, exécution des commandes).
+
+Utilisé ensemble `-it` : Permet d’interagir avec le conteneur **comme un terminal classique**. 
+
+---
+
 # Concept clé 4 : Dockerfile
 
 - Fichier permettant de créer une **image Docker personnalisée**
@@ -585,7 +596,7 @@ FROM postgres:15
 
 ---
 
-# Image Layers et historique
+# Concept clé 5 : Image Layers
 
 - Une image est composée de plusieurs **layers** (couches)
 - Couche consultable via `docker history <image>`
@@ -618,7 +629,9 @@ IMAGE          CREATED          CREATED BY                                      
 ```
 
 ---
-# Single-Stage - Partie 1
+# Concept clé 6 : Multi-stage builds
+
+## Single-stage builds
 
 Image Docker construite en une seule étape, contenant à la fois les outils de compilation et l’application finale
 
@@ -634,7 +647,9 @@ COPY pom.xml .
 COPY src ./src
 ```
 ---
-# Single-Stage - Partie 2
+# Multi-stage builds
+
+## Single-stage builds (suite du Dockerfile)
 
 ```dockerfile
 # Compiler l'application
@@ -649,12 +664,12 @@ CMD ["java", "-jar", "target/app.jar"]
 
 ---
 
-# Multi-Stage Build - Partie 1 
+# Multi-stage builds
 
-Une image Multi-Stage sépare la construction et l’exécution en plusieurs étapes, ne conservant que l’exécutable final dans une image allégée.
+Une image Multi-Stage **sépare** la **construction** et **l’exécution** en plusieurs étapes, ne conservant que l’exécutable final dans une **image allégée**.
 
 ```dockerfile
-# Étape 1 : Construction de l'application avec Maven
+# Étape 1 : Construction de l'application, étape nommée "builder"
 FROM maven:3.9-eclipse-temurin-17 AS builder
 
 # Définir le répertoire de travail
@@ -670,7 +685,9 @@ RUN mvn clean package -DskipTests
 
 ---
 
-# Multi-Stage Build - Partie 2
+# Multi-stage builds
+
+## Multi-stage builds (suite du Dockerfile)
 
 ```dockerfile
 # Étape 2 : Création d'une image légère pour l'exécution
@@ -679,13 +696,11 @@ FROM eclipse-temurin:17-jre
 # Définir le répertoire de travail
 WORKDIR /app
 
-# Copier uniquement le JAR compilé depuis l'étape précédente
+# Copier uniquement le JAR compilé depuis l'étape précédente (nommée "builder")
 COPY --from=builder /app/target/*.jar app.jar
 
-# Exposer le port utilisé par l'application
 EXPOSE 8080
 
-# Lancer l'application
 CMD ["java", "-jar", "app.jar"]
 ```
 ---
@@ -708,7 +723,7 @@ image-single-stage   latest    4068a159c3d2   36 seconds ago   599MB
 
 # Concept 5 : Les volumes
 
-Les volumes permettent de stocker les données de manière persistante.
+Les volumes permettent de **stocker** les données de manière **persistante**.
 
 <div class="columns">
 <div>
@@ -743,8 +758,6 @@ volumes:
 </div>    
 </div> 
 
-Les données PostgreSQL sont stockées de manière persistante.
-
 ---
 <!-- _class: transition2 -->  
 
@@ -752,29 +765,50 @@ Docker-compose
 
 ---
 
-<div>         
- 
-![h:450px](./img/work-in-progress.jpeg)
-   
-</div> 
-
----
-
 # Qu'est-ce que Docker Compose ?
 
-<div class="columns">
-<div>
-
-<center>
-
-![h:350](./img/docker-compose.jpg)
-
-</center>
 
 </div>
 <div>
 
-Docker Compose est un outil permettant de définir et de gérer des applications multi-conteneurs à l'aide d'un fichier YAML. Il facilite le déploiement, la configuration et l'orchestration de services.
+Docker Compose est un outil permettant de définir et de gérer des applications **multi-conteneurs** à l'aide d'un fichier **YAML**. Il facilite le déploiement et la configuration de services.
+
+</div>
+</div>
+
+---
+# Fichier YAML
+ 
+<div class="columns">
+<div>
+
+- **YAML (Yet Another Markup Language)** est un format de fichier utilisé pour la configuration.  
+- Utilisé notamment dans **Docker Compose, Kubernetes, Ansible**.   
+- **Basé sur l'indentation** par espaces, pas de tabulations
+- Fichier **Clé-valeur**   
+- Description de l'exemple [disponible sur Wikipedia](https://fr.wikipedia.org/wiki/YAML)
+</div>
+<div>
+
+```yaml
+receipt:     Oz-Ware Purchase Invoice
+date:        2012-08-06
+customer:
+    given:   Dorothy
+    family:  Gale
+
+items:
+    - part_no:   A4786
+      descrip:   Water Bucket (Filled)
+      price:     1.47
+      quantity:  4
+
+    - part_no:   E1628
+      descrip:   High Heeled "Ruby" Slippers
+      size:      8
+      price:     100.27
+      quantity:  1
+```
 
 </div>
 </div>
@@ -786,8 +820,8 @@ Docker Compose est un outil permettant de définir et de gérer des applications
 | Fonctionnalité       | Docker | Docker Compose |
 |---------------------|--------|---------------|
 | Gestion des conteneurs | Oui | Oui |
-| Orchestration multi-conteneurs | Non | Oui |
-| Configuration via YAML | Non | Oui |
+| Gestion multi-conteneurs | Non | Oui |
+| Configuration | Dockerfile | YAML |
 | Simplification du workflow | Non | Oui |
 
 ---
@@ -844,8 +878,23 @@ docker run -d \
   -p 5050:80 \
   dpage/pgadmin4
 ```
+
 </div>
 </div>
+
+Il faut ensuite configurer **manuellement** PgAdmin pour utiliser PostgreSQL.
+
+---
+
+# La solution Docker-compose
+
+## Configuration via un fichier `docker-compose.yml` contenant : 
+
+1. **Version** : Détermine la version du fichier Compose.
+2. **Services** : Définit les conteneurs et leurs configurations.
+3. **Networks** : Gère la communication entre conteneurs.
+4. **Volumes** : Persiste les données.
+
 
 ---
 
@@ -854,7 +903,7 @@ docker run -d \
 <div class="columns">
 <div>
 
-### Première partie du fichier
+### Première partie du fichier YAML
 
 ```yaml
 version: '3.8'
@@ -874,7 +923,7 @@ services:
 </div>
 <div>
 
-### Seconde partie du fichier
+### Seconde partie du fichier YAML
 
 
 ```yaml
@@ -882,8 +931,10 @@ services:
     image: dpage/pgadmin4
     container_name: pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: 
+          admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: 
+          admin
     ports:
       - "5050:80"
     depends_on:
@@ -892,15 +943,6 @@ services:
 
 </div>
 </div>
-
----
-
-# Structure d’un fichier `docker-compose.yml`
-
-1. **Version** : Détermine la version du fichier Compose.
-2. **Services** : Définit les conteneurs et leurs configurations.
-3. **Networks** : Gère la communication entre conteneurs.
-4. **Volumes** : Persiste les données.
 
 ---
 
@@ -924,24 +966,84 @@ docker-compose stop <service>
 ```
 
 ---
+<!-- _class: transition2 -->  
 
-# Docker Compose vs Kubernetes
+Microservices et besoin en orchestration
 
-| Fonctionnalité | Docker Compose | Kubernetes |
-|---------------|---------------|------------|
-| Déploiement local rapide | Oui | Non |
-| Gestion avancée du scaling | Non | Oui |
-| Orchestration avancée | Non | Oui |
-| Utilisé en production | Non recommandé | Oui |
+---
+
+
+<!-- _class: cite -->        
+
+Une architecture **microservices** consiste à découper une application en plusieurs services indépendants, qui communiquent entre eux via des **API**. Chaque microservice est responsable d’une fonction spécifique et peut être développé, déployé et mis à l’échelle **indépendamment**.
+
+---
+
+# Microservices pour une application e-commerce
+
+| **Microservice**  | **Rôle**                            | **Technologie possible**  |
+|------------------|--------------------------------|--------------------------|
+| **Auth**        | Gère l’authentification des utilisateurs | Node.js      |
+| **Produits**    | Gère le catalogue des produits | Python      |
+| **Panier**      | Gère les articles ajoutés au panier | Java   |
+| **Paiement**    | Traite les paiements et transactions | Go, Stripe API         |
+| **Commandes**   | Gère les commandes et livraisons | .NET       |
+| **Notifications** | Envoie des e-mails et SMS | Python       |
+
+---
+
+# Avantages des microservices  
+- **Scalabilité accrue** : Mise à l’échelle indépendante de chaque service.  
+- **Déploiement indépendant** : Mise à jour d’un service sans impacter les autres.  
+- **Flexibilité technologique** : Chaque microservice peut utiliser un langage différent.  
+- **Meilleure résilience** : Une panne d’un service n’affecte pas toute l’application.  
+- **Développement et maintenance facilités** : Travail en parallèle de plusieurs équipes.  
+- **Optimisation des performances** : Allocation des ressources selon les besoins.  
+
+---
+
+# Inconvénients des microservices  
+- **Complexité accrue** : Orchestration et gestion plus difficiles qu’une application monolithique.  
+- **Communication entre services** : Besoin d’API robustes et de messages asynchrones.  
+- **Gestion des données distribuées** : Synchronisation  entre plusieurs bases de données.  
+- **Surcoût en infrastructure** : Multiplication des conteneurs et des services.  
+- **Débogage et monitoring plus difficiles**  : Utilisation d’outils comme Prometheus ou Grafana.  
+- **Orchestration nécessaire** : Besoin d’outils comme Docker Compose, Swarm ou Kubernetes.  
 
 ---
 
 # Microservices et Docker Compose
 
-Docker Compose est un excellent outil pour organiser des microservices en développement. Il permet :
+Docker Compose est un excellent outil pour organiser des microservices en **développement**. Il permet :
 - Une gestion simplifiée des dépendances.
 - Un déploiement rapide.
 - Une cohérence entre environnements de développement et de test.
+
+---
+
+# Limites de Docker Compose pour les microservices  
+ 
+- **Pas de scalabilité avancée** : Impossible de répartir les charges sur plusieurs machines.  
+- **Absence de haute disponibilité** : Aucun redémarrage automatique des conteneurs en cas de panne.  
+- **Gestion réseau limitée** : Pas de load balancing avancé entre plusieurs instances.  
+- **Orchestration rudimentaire** : Pas de gestion de cluster multi-serveurs.  
+- **Pas de mise à jour sans interruption** : Nécessite un redémarrage manuel (`docker-compose down/up`).   
+- **Pas d’autoscaling** : Impossible d’adapter dynamiquement le nombre de conteneurs selon la charge.  
+
+---
+# Utilisation suivant l'environnement
+
+### Quand utiliser Docker Compose ?  
+- **Développement local** : Tester des applications multi-conteneurs sur un poste de travail.  
+- **Petits projets** : Applications simples avec peu de services.  
+- **CI/CD** : Exécuter des tests dans un environnement conteneurisé.  
+
+### Alternatives pour la production  
+
+- **Docker Swarm** : Orchestration native avec gestion de cluster.  
+- **Kubernetes** : Plateforme complète pour les microservices à grande échelle.  
+
+**Docker Compose est idéal pour le développement, mais insuffisant pour une gestion efficace des microservices en production !**
 
 ---
 <!-- _class: transition2 -->  
