@@ -439,7 +439,7 @@ docker rm     keen_banach
 - Chaque conteneur peut être nommé pour une identification plus facile.
 - Utilisation de `--name` lors du démarrage d’un conteneur :
 ```bash
-docker run --name mon_postgres postgres:15
+docker run --name mon_python python:latest
 ```
 - Un conteneur nommé est plus facile à gérer pour les commandes comme `docker stop`
 
@@ -519,7 +519,12 @@ docker ps
 ```
 - Se connecter au conteneur et exécuter une requête SQL :
 ```bash
-docker exec -it postgres psql -U admin -d mydatabase -c "SELECT NOW();"
+docker exec -it postgres psql -U admin -d mydatabase -c "SELECT * FROM person;"
+```
+
+```bash
+docker exec -it postgres psql -U admin -d mydatabase -c "CREATE TABLE person 
+(firstname VARCHAR(255), lastname VARCHAR(255));"
 ```
 
 ---
@@ -725,38 +730,18 @@ image-single-stage   latest    4068a159c3d2   36 seconds ago   599MB
 
 Les volumes permettent de **stocker** les données de manière **persistante**.
 
-<div class="columns">
-<div>
+Exemple avec un serveur web nginx
 
-```yaml
-version: '3.8'
-
-services:
-  postgres:
-    image: postgres
-    container_name: postgres
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: mydb
-
+```bash
+mkdir my_website
+echo "<h1>Bienvenue sur mon site</h1>" > my_website/index.html
 ```
 
-</div>  
-<div> 
-
-```yaml
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-volumes:
-  db_data:
+```bash
+docker run -d --name my_nginx -p 8080:80 -v ./my_website:/usr/share/nginx/html nginx
 ```
 
-</div>    
-</div> 
+http://localhost:8080 affiche le contenu du fichier my_website/index.html. VOus devez avoir les droits d'écriture dans le volume.
 
 ---
 <!-- _class: transition2 -->  
@@ -783,10 +768,10 @@ Docker Compose est un outil permettant de définir et de gérer des applications
 <div>
 
 - **YAML (Yet Another Markup Language)** est un format de fichier utilisé pour la configuration.  
-- Utilisé notamment dans **Docker Compose, Kubernetes, Ansible**.   
-- **Basé sur l'indentation** par espaces, pas de tabulations
-- Fichier **Clé-valeur**   
-- Description de l'exemple [disponible sur Wikipedia](https://fr.wikipedia.org/wiki/YAML)
+- Utilisé notamment dans **Docker Compose, Kubernetes, Ansible**.
+- **Basé sur l'indentation** par espaces, pas de tabulations.
+- Fichier **Clé-valeur**.
+- Description de l'exemple [disponible sur Wikipedia](https://fr.wikipedia.org/wiki/YAML).
 </div>
 <div>
 
