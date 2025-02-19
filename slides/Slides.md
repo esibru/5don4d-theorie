@@ -1033,23 +1033,410 @@ Docker Compose est un excellent outil pour organiser des microservices en **dév
 ---
 <!-- _class: transition2 -->  
 
-Analyse de la qualité du code<br>
-Sonarqube
+Définition d'un pipeline<br>
+GitlabCI/CD
 
 --- 
 
-<div>         
- 
-![h:450px](./img/work-in-progress.jpeg)
-   
-</div> 
+# Qu'est-ce que le CI/CD et le Pipeline ?
+Le CI/CD (“Continuous Integration/Continuous Deployment”) est une approche permettant d'automatiser l'intégration et le déploiement du code source.
+- **Continuous Integration (CI)** : Exécution automatique de tests et vérifications lors d'un push sur le repository.
+- **Continuous Deployment/Delivery (CD)** : Livraison et déploiement automatique ou semi-automatique du code validé.
+- **Pipeline** : Une séquence d'actions (jobs) définie pour compiler, tester et déployer un projet.
+
+--- 
+
+# Outil sélectionné
+
+## GitLab CI/CD
+- Outil **intégré** à Gitlab et **pipelines** intégrés **avec le code** de l'application.
+- Apprentissage rapide.
+
+## Architecture
+
+- **GitLab Server** stocke le code et orchestre l'exécution des pipelines CI/CD.
+- **GitLab CI/CD** génère des jobs à partir.
+- **GitLab Runner** récupère les jobs et les assigne à un **executor**.
+- **Les executors** sont les environnements qui exécutent réellement les commandes.
+--- 
+
+# Fichier YAML et .gitlab-ci.yml
+- Le fichier `.gitlab-ci.yml` définit le **pipeline**.
+- Il suit la syntaxe **YAML** et doit être placé **à la racine du projet**.
+- Contient des définitions de **jobs**, variables, images Docker, scripts,...
+
+```yaml
+build_job:
+  script:
+    - echo "Hello, GitLab CI/CD!"
+```
+
+---
+# Création d'un runner
+
+Un runner est un **agent** qui **exécute** les **jobs** des pipelines GitLab CI/CD.
+
+*Sans runner, aucun job ne peut être exécuté.*
+
+[Installation via Docker](https://docs.gitlab.com/runner/install/docker/)
+
+```bash
+docker run -d --name gitlab-runner --restart always \
+  -v /srv/gitlab-runner/config:/etc/gitlab-runner \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  gitlab/gitlab-runner:latest
+```
+
+---
+# Création d'un runner authentication token
+
+Chaque runner est **enregistré** avec une token d'inscription auprès de GitLab.
+
+- Shared Runner : Géré par GitLab pour tous les projets.
+- **Specific Runner : Assigné à un projet ou un groupe.**
+- Group Runner : Assigné à plusieurs projets d’un groupe GitLab.
+
+[Création du token pour un projet](https://docs.gitlab.com/ci/runners/runners_scope/#create-a-project-runner-with-a-runner-authentication-token) :
+
+1. Menu `Settings > CI/CD` du projet.
+1. Ouvrir la section **Runners**.
+1. Créer le runner via le bouton **New project runner**.
+1. Cocher la case **Run untagged jobs**
+1. Copier le **runner authentication token** avant qu'il ne disparaisse.
+---
+# Enregistrement d'un runner
+
+[Enregistrement d'un runner Docker : ](https://docs.gitlab.com/runner/register/?tab=Docker#registering-runners-with-docker)
+
+- Remplacer **$RUNNER_TOKEN** par le token du projet.
+- Image **alpine** peut-être adaptée.
+```bash
+docker run --rm -v /srv/gitlab-runner/config:/etc/gitlab-runner gitlab/gitlab-runner register \
+  --non-interactive \
+  --url "https://git.esi-bru.be" \
+  --token "$RUNNER_TOKEN" \
+  --executor "docker" \
+  --docker-image alpine:latest \
+  --description "docker-runner"
+```
+--- 
+
+# Executor
+
+- **Shell Executor** : Exécute les jobs directement sur la machine hôte.
+- **Docker Executor** : Exécute chaque job dans un conteneur Docker isolé, permettant une meilleure gestion des dépendances.
+- **Kubernetes** : Exécution dans un cluster Kubernetes.
+- **Virtual Machine** : Exécution dans une machine virtuelle.
+- [Autres options dans la documentation.](https://docs.gitlab.com/runner/executors/)
+
+---
+# Modifier la configuration de l'executor
+
+Configuration dans le volume `/srv/gitlab-runner/config`
+
+```toml
+[[runners]]
+  name = "dop1dr-demo"
+  url = "https://git.esi-bru.be"
+...
+  [runners.docker]
+    tls_verify = false
+    image = "alpine"
+    privileged = false
+    disable_entrypoint_overwrite = false
+    oom_kill_disable = false
+    disable_cache = false
+    volumes = ["/cache"]
+    shm_size = 0
+    network_mtu = 0
+```
+---
+
+# Exécution du Pipeline
+- Manuel d'un pipeline via l'interface GitLab.
+- Automatique via une mise à jour du dépôt suite à `git push`.
+- Logs accessibles dans **CI/CD > Pipelines > Jobs**.
+- Logs de l'executor `docker logs -f gitlab-runner`.
+- Possibilité de relancer un job en échec.
+
+--- 
+
+# Mots clés .gitlab-ci.yml
+
+[Mots clés du fichier .gitlab-ci.yml disponible via la documentation.](https://docs.gitlab.com/ci/yaml/)
+
+Exemple :
+- **Jobs** : Chaque job exécute une ou plusieurs commandes.
+- **Image** : Conteneur Docker utilisé pour exécuter un job.
+- **before_script** : Commandes exécutées avant le script principal.
+- **script** : Commandes exécutées dans le job.
+- **after_script** : Commandes exécutées après le job.
+- **Variables** : Définies à différents niveaux (job, pipeline).
+- **Services** : Conteneurs supplémentaires utilisés par un job (ex: base de données).
+
+--- 
+# Exemple 1 : Script et variable
+
+Créer une variable via le menu **Settings > CI/CD/ Variables**
+
+```yaml
+my_first_job:
+  script:
+    - echo "Hello World!"
+    - echo "La valeur de MY_VARIABLE est '$MY_VARIABLE'"
+```
+
+Consulter le résultat via le menu **Build > Jobs**
+
+```bash
+Executing "step_script" stage of the job script 00:01
+Using docker image ...
+$ echo "Hello World!"
+Hello World!
+$ echo "La valeur de MY_VARIABLE est '$MY_VARIABLE'"
+La valeur de MY_VARIABLE est 'Test'
+```
+
+--- 
+# Exemple 2 : Utiliser une commande
+
+Utiliser la commande maven dans le script
+
+```yaml
+my_first_job:
+  script:
+    - mvn --version
+```
+
+Statut **failed** du job via le menu **Build > Jobs**
+
+```bash
+$ mvn --version
+/bin/sh: eval: line 151: mvn: not found
+Cleaning up project directory and file based variables 00:00
+ERROR: Job failed: exit code 127
+```
+
+--- 
+# Exemple 3 : Utiliser une commande avant le script
+
+Utiliser la commande before_script
+
+```yaml
+my_first_job:
+  before_script:
+    - apk add --no-cache maven
+  script:
+    - mvn --version
+```
+Statut **Passed** du job via le menu **Build > Jobs**
+
+```bash
+...
+(1/30) Installing java-common (0.5-r0)
+...
+Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)
+...
+```
+
+--- 
+# Exemple 4 : Utiliser une image
+
+Utiliser une image maven.
+
+```yaml
+my_first_job:
+  image: maven:3.9.9-eclipse-temurin-23-alpine
+  script:
+    - mvn --version
+```
+Statut **Passed** du job via le menu **Build > Jobs**
+
+```bash
+Using docker image ... maven:3.9.9-eclipse-temurin-23-alpine ...
+$ mvn --version
+Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)
+```
+
+--- 
+# Exemple 5 : Premier pipeline pour une application
+
+```yaml
+my_first_job:
+  image: maven:3.9.9-eclipse-temurin-23-alpine
+  before_script:
+  - cd demo-no-db
+  script:
+    - mvn test
+    - mvn package -DskipTests
+```
+
+--- 
+# Exemple 6 : La notion de stage
+
+<div class="columns">
+<div>
+
+```yaml
+stages:
+  - test
+  - build
+
+job-test:
+  stage: test
+  image: maven:3.9.9-eclipse-temurin-23-alpine
+  before_script:
+  - cd demo-no-db
+  script:
+    - mvn test
+```
+
+</div>
+<div>
+
+```yaml
+job-build:
+  stage: build
+  image: maven:3.9.9-eclipse-temurin-23-alpine
+  before_script:
+  - cd demo-no-db
+  script:
+    - mvn package -DskipTests
+```
+
+</div>
+</div>
+
+--- 
+# Exemple 7 : Image et variable globales
+
+<div class="columns">
+<div>
+
+```yaml
+default:
+  image: maven:3.9.9-eclipse-temurin-23-alpine
+
+stages:
+  - test
+  - build
+
+variables:
+  WORK_DIR: "demo-no-db"
+
+job-test:
+  stage: test
+  before_script:
+  - cd $WORK_DIR
+  script:
+    - mvn test
+```
+
+</div>
+<div>
+
+```yaml
+job-build:
+  stage: build
+  before_script:
+  - cd $WORK_DIR
+  script:
+    - mvn package -DskipTests
+```
+
+</div>
+</div>
+
+---
+# Exemple 8 : Le caching
+
+- Le caching permet d'améliorer les performances en évitant de re-télécharger des dépendances ou de recompiler du code déjà construit.
+- Il est défini au niveau des jobs dans .gitlab-ci.yml.
+- Les caches sont stockés sur le runner et peuvent être partagés entre différents jobs.
+- Exemple d'utilisation pour un projet Maven :
+
+```yaml
+cache:
+  paths:
+    - .m2/repository/
+script:
+    - mvn test -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository
+```
+
+---
+# Exemple 9 : Filtrer les jobs
+
+**only** définit des règles de filtrage qui sont appliquées à chaque job dans le pipeline. Ce job s'exécutera sur les branches **main** ou **develop** : 
+
+```yaml
+job_build:
+  script:
+    - mvn package -DskipTests
+  only:
+    - main
+    - develop
+```
+---
+# Exemple 10 : Docker in Docker
+
+Ajouter le **Dockerfile** au dépôt.
+
+```yaml
+docker_build:
+  stage: docker_build
+  image: docker:20.10.16  # Utilise l'image Docker pour construire l'image
+  services:
+    - docker:20.10.16-dind  # Active Docker-in-Docker
+  script:
+    - docker build -t $DOCKER_USERNAME/4dop1dr-image:$CI_COMMIT_REF_NAME .
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"  # Nécessaire pour Docker-in-Docker
+```
+
+---
+
+# Un autre outil : Jenkins
+
+## Fonctionnalités principales de Jenkins :
+- **Automatisation des builds et tests** : Jenkins permet d'automatiser les tâches de construction, de test, et de déploiement.
+- **Extensibilité** : Jenkins dispose de milliers de plugins qui peuvent être utilisés pour intégrer des outils et des services externes (par exemple, Docker, Kubernetes, etc.).
+- **Pipelines** : Les pipelines dans Jenkins peuvent être définis de manière déclarative ou par script, ce qui permet une grande flexibilité.
+- **Compatibilité avec de nombreux SCM** : Jenkins fonctionne avec des systèmes de gestion de code source comme Git, Subversion, Mercurial, etc.
+- **Automatisation des déploiements** : Jenkins permet d'automatiser les déploiements vers différents environnements (staging, production, etc.).
+
+---
+# Comparaison entre Jenkins et Gitlab CI-CD
+**Installation et Configuration** :
+   - **Jenkins** : Nécessite une installation et une configuration manuelle.
+   - **GitLab CI/CD** : Intégré directement dans GitLab, plus facile à configurer.
+
+**Flexibilité et Extensibilité** :
+   - **Jenkins** : Large écosystème de plugins, idéal pour des configurations complexes.
+   - **GitLab CI/CD** : Intégrations natives avec des outils populaires.
+
+---
+# Comparaison entre Jenkins et Gitlab CI-CD
+
+**Maintenance et Scalabilité** :
+   - **Jenkins** : Nécessite une maintenance régulière, gestion des plugins et mise à jour manuelle.
+   - **GitLab CI/CD** : Plus facile à maintenir et gérer, avec des runners GitLab pour la scalabilité.
+
+**Intégration avec Git** :
+   - **Jenkins** : Nécessite une configuration manuelle pour s'intégrer à Git.
+   - **GitLab CI/CD** : S'intègre de manière native avec les repos GitLab.
+
+---
+
+# Comparaison entre Jenkins et Gitlab CI-CD
+
+Le choix entre Jenkins et GitLab CI/CD dépendra de la taille et de la complexité du projet, ainsi que des outils déjà utilisés dans votre organisation.
 
 
 ---
 <!-- _class: transition2 -->  
 
-Définition d'un pipeline<br>
-GitlabCI/CD
+Analyse de la qualité du code<br>
+Sonarqube
 
 --- 
 
