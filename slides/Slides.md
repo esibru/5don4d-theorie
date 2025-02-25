@@ -1438,13 +1438,583 @@ Le choix entre Jenkins et GitLab CI/CD dépendra de la taille et de la complexit
 Analyse de la qualité du code<br>
 Sonarqube
 
+---
+
+# Qu'est-ce que l'analyse statique du code ?
+
+**Définition**
+
+- L'analyse statique est une technique qui examine le code source sans l'exécuter.
+- Utilisée pour détecter des erreurs, des vulnérabilités et améliorer la qualité du code.
+
+
+**Pourquoi est-ce important ?**
+
+- Détection précoce des bugs et vulnérabilités.
+- Amélioration de la maintenabilité du code.
+- Suivi de la dette technique.
+
+---
+
+# Exemples d'outils
+
+- **SonarQube** : Analyse approfondie de la qualité du code.
+- **ESLint** : Analyse du code JavaScript.
+- **Pylint** : Analyse du code Python.
+- **Checkstyle** : Vérification des conventions de code Java.
+- **PMD** : Analyse du code multi-langage.
+
+---
+
+# Qu'est-ce que l'analyse dynamique du code ?
+
+**Définition**
+
+- L'analyse dynamique du code examine un programme en cours d'exécution.
+- Permet d'observer le comportement réel du code et d'identifier des erreurs d'exécution.
+
+**Pourquoi est-ce important ?**
+
+- Détection des **fuites de mémoire** et des erreurs runtime.
+- Identification des **problèmes de performance**.
+- Mise en évidence des **vulnérabilités de sécurité** en condition réelle.
+
+---
+
+# Outils d'analyse dynamique
+
+**Exemples d'outils**
+
+- **JMeter** : Teste la performance des applications.
+- **Selenium** : Automatisation des tests fonctionnels.
+- **OWASP ZAP** : Détection des vulnérabilités web.
+- **Valgrind** : Détection des erreurs mémoire.
+
+Attention : **Analyse dynamique** et **analyse statique** sont complémentaires. 
+
 --- 
 
-<div>         
- 
-![h:450px](./img/work-in-progress.jpeg)
-   
-</div> 
+# Introduction à SonarQube
+
+<div class="columns">
+<div>
+
+**SonarQube** se distingue par sa visualisation des métriques.
+
+### Composants
+
+- **SonarScanner** : Analyse le code source.
+  - [Image disponible sur Docker Hub](https://hub.docker.com/r/sonarsource/sonar-scanner-cli)
+- **SonarQube Server** : Reçoit les résultats et les stocke.
+  - [Image disponible sur Docker Hub](https://hub.docker.com/_/sonarqube/tags?name=community)
+
+</div>
+<div>
+
+![h:450px](./img/sonarqube-architecture.png)
+
+</div>
+</div>
+
+---
+
+# Architecture de SonarQube & SonarScanner
+
+<div class="columns">
+<div>
+
+1. Le développeur **exécute SonarScanner** pour analyser son code.
+1. **SonarScanner** effectue l'analyse et **envoie** les résultats à **SonarQube Server**.
+1. **SonarQube Server** enregistre ces résultats dans **sa base de données**.
+1. Le développeur **consulte l'interface web** du serveur pour voir les **rapports** d'analyse.
+1. SonarQube Server affiche les résultats.
+
+</div>
+<div>
+
+![h:450px](./img/sonnar-sequence.png)
+
+</div>
+</div>
+
+---
+
+# Installation de SonarQube avec Docker
+
+<!-- _class: cool-list -->
+
+1. *Créer un **réseau** pour les conteneurs.*
+1. *Démarrer un **conteneur SonarQube Server**.*
+1. *Générer un **token** par SonarQube Server.*
+1. *Télécharger l'**image SonarScanner**.*
+
+---
+# Créer un **réseau** pour les conteneurs
+
+```sh
+docker network create sonar-network
+```
+
+Permet la communication entre les conteneurs : 
+- SonarQube Server 
+- SonarScanner
+
+---
+# Démarrer un **conteneur SonarQube Server**
+
+```sh
+docker run -d --name sonarqube \
+  --network sonar-network \
+  -p 9000:9000 \
+  sonarqube:lts-community
+```
+
+- `-d` : Mode détaché.
+- `--network sonar-network` : Connexion au réseau.
+- `-p 9000:9000` : Port pour accéder à l’interface web.
+
+---
+# Générer un **token** par SonarQube Server
+
+### Connexion avec les identifiants par défaut :
+
+- Utilisateur : admin
+- Mot de passe : admin
+- Valeur par défaut à changer lors de la première connexion
+
+### Création du token
+
+- Aller dans **Account > Security**
+- Générer un nouveau token
+- Copier le token pour l’utiliser plus tard avec SonarScanner
+
+---
+# Télécharger l'**image SonarScanner**
+
+```sh
+docker pull sonarsource/sonar-scanner-cli
+```
+
+---
+# Analyse d'un projet Java
+
+<!-- _class: cool-list -->
+
+1. *Créer un fichier de configuration pour le projet.*
+1. *Récupérer le token d'analyse.*
+1. *Compiler le projet.*
+1. *Exécuter les tests.*
+1. *Générer les rapports de tests.*
+1. *Lancer l'analyse avec SonarScanner.*
+
+---
+
+# JaCoCo et la couverture du code
+
+**Qu'est-ce que JaCoCo ?**
+- **Java Code Coverage** est un outil de couverture de code pour Java.
+- Il génère un rapport détaillant les parties du code exécutées lors des tests unitaires.
+
+**Lien entre JaCoCo et SonarQube**
+- JaCoCo génère un rapport de couverture des tests.
+- SonarQube lit ce rapport et affiche des métriques sur la couverture du code.
+- Permet d’identifier les parties du code non testées.
+
+---
+# Plugin JaCoCo pour Maven
+
+Ajout d'un plugin maven dont il configurer l'exécution.
+
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.jacoco</groupId>
+      <artifactId>jacoco-maven-plugin</artifactId>
+      <version>0.8.12</version>
+      <executions>
+        <execution>
+          ... 
+        </execution>
+      </executions>
+    </plugin>        
+  </plugins>
+</build>
+```
+
+---
+# Configuration du plugin JaCoCo pour Maven
+
+```xml
+<execution>
+    <id>prepare-agent</id>
+    <goals>
+        <goal>prepare-agent</goal>
+    </goals>
+</execution>
+
+<execution>
+    <id>report</id>
+    <goals>
+        <goal>report</goal>
+    </goals>
+</execution>
+```
+
+---
+# Génération du rapport de couverture de tests
+
+```sh
+mvn clean test jacoco:report
+```
+
+---
+# Structure d'un projet maven
+
+<div class="columns">
+<div>
+
+```sh
+.
+├── pom.xml
+├── sonar-project.properties
+├── src
+│   ├── main
+│   │   ├── java
+│   │   │   └── be
+│   │   │       └── esi
+│   │   │           └── Main.java
+│   │   └── resources
+│   └── test
+│       └── java
+│           └── be
+│               └── esi
+│                   └── MainTest.java
+
+```
+
+</div>
+<div>
+
+```sh
+└── target
+    ├── classes
+    │   └── be
+    │       └── esi
+    │           └── Main.class
+    ├── site
+    │   └── jacoco
+    │       ├── jacoco-sessions.html
+    │       └── jacoco.xml
+    ├── surefire-reports
+    │   ├── be.esi.MainTest.txt
+    │   └── TEST-be.esi.MainTest.xml
+    └── test-classes
+        └── be
+            └── esi
+                └── MainTest.class
+```
+
+</div>
+</div>
+
+---
+# Fichier sonar-project.properties
+
+## Définit les paramètres d’analyse d’un projet
+
+```ini
+# Identifiant du projet.
+# Doit être unique dans l’instance SonarQube.
+# Obligatoire
+sonar.projectKey=mon-application-java
+
+# Nom du projet tel qu’il apparaîtra dans l’interface web.
+# Obligatoire
+sonar.projectName=Mon Application Java
+
+# Permet de suivre l'évolution de la qualité entre différentes versions
+# Facultatif
+sonar.projectVersion=1.0
+```
+
+---
+# Fichier sonar-project.properties
+
+## Configuration générale
+
+```ini
+# Répertoire de base du projet
+# Par défaut SonarScanner utilise le dossier où il est exécuté.
+# Facultatif
+sonar.projectBaseDir=.
+
+# Spécifie où se trouvent les fichiers source à analyser.
+# Obligatoire
+sonar.sources=src/main/java
+
+# Répertoires contenant les tests unitaires.
+# Nécessaire si on veut inclure les résultats des tests.
+sonar.tests=src/test/java
+```
+
+---
+# Fichier sonar-project.properties
+
+## Spécifique à un projet Java
+
+```ini
+# Spécifie l’emplacement des rapports JUnit pour SonarQube. 
+# Nécessaire si on veut inclure les résultats des tests.
+sonar.junit.reportPaths=target/surefire-reports
+
+# Répertoire contenant les fichiers de bytecode compilés (.class)
+# Obligatoire pour Java. SonarQube a besoin des fichiers 
+# compilés pour effectuer certaines analyses (comme la détection 
+# des problèmes de type ou de complexité cyclomatique).
+sonar.java.binaries=target/classes
+```
+
+
+---
+# Fichier sonar-project.properties
+
+## Spécifique à un projet Java
+
+```ini
+# Rapport de couverture des tests
+# Obligatoire si on veut suivre la couverture des tests unitaires.
+sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+```
+
+---
+# Démarer le conteneur SonarScanner
+
+Commande à exécuter dans le dossier racine du projet
+
+```sh
+docker run --rm \
+  --network sonar-network \
+  -v "$(pwd):/usr/src" \
+  -e SONAR_HOST_URL="http://sonarqube:9000" \
+  -e SONAR_TOKEN="VOTRE_TOKEN_ICI" \
+  sonarsource/sonar-scanner-cli
+```
+
+- `--rm` : Supprime le conteneur après l’exécution.
+- `-v "$(pwd):/usr/src"` : Monte le répertoire du projet.
+- `-e SONAR_HOST_URL` : URL du serveur, **sonarqube** est le nom du conteneur du serveur dans le réseau **sonar-network**.
+- `-e SONAR_TOKEN` : Token pour l'authentification.
+
+---
+
+# Visualisation des résultats
+
+<center>
+
+![h:400px](./img/sonar-quality.png)
+
+[http://localhost:9000](http://localhost:9000)
+
+</center>
+
+---
+
+# Catégories Bugs
+
+- Identification des erreurs critiques pouvant entraîner des dysfonctionnements.
+
+- Objectif : Éviter les plantages et améliorer la fiabilité.
+
+```java
+public int divide(int a, int b) {
+    return a / b;  // Risque de division par zéro
+}
+```
+
+**Division by zero can result in an ArithmeticException.**
+
+---
+
+# Catégories Vulnérabilités
+
+- Détection des failles de sécurité exploitables.
+
+- Objectif : Renforcer la protection contre les attaques.
+
+```java
+import java.sql.*;
+
+public class VulnerabilityExample {
+    public void executeQuery(String userInput) throws SQLException {
+        Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/db", "user", "pass");
+        Statement stmt = conn.createStatement();
+        stmt.execute("SELECT * FROM users WHERE name = '" + userInput + "'"); // Injection SQL
+    }
+}
+```
+
+---
+
+# Catégories Code Smells
+
+- Identification des mauvaises pratiques de codage.
+
+- Objectif : Améliorer la maintenabilité et la lisibilité du code.
+
+```java
+public void processOrder() {
+    validateOrder();
+    calculatePrice();
+    applyDiscount();
+    sendConfirmationEmail();
+    updateStock();
+    logTransaction();
+}
+```
+
+**Method processOrder() is too long and violates the Single Responsibility Principle.**
+
+---
+
+# Catégories Technical Debt
+
+- Estimation du temps nécessaire pour corriger les problèmes détectés.
+
+- Objectif : Anticiper l'effort de refactorisation.
+
+---
+
+# Catégories Coverage
+
+- Mesure du taux de couverture des tests unitaires.
+
+- Objectif : Vérifier l'efficacité des tests automatisés.
+
+
+</div>
+</div>
+
+---
+
+# Catégories Duplication
+
+- Identification des blocs de code dupliqués.
+
+- Objectif : Réduire la redondance et simplifier la maintenance.
+
+```java
+public int add(int a, int b) {
+    return a + b;
+}
+
+public int sum(int a, int b) {  // Code dupliqué
+    return a + b;
+}
+```
+
+**Code duplication detected: methods add and sum perform the same operation.**
+
+---
+
+# Suivi de l'évolution d'un projet avec SonarQube
+
+**Historique des analyses**
+- Stocke chaque analyse et permet de comparer les résultats au fil du temps.
+- Suivi des tendances sur les bugs, vulnérabilités, code smells et dette technique.
+
+**Graphiques et tendances**
+- Courbes d'évolution des métriques (qualité, couverture, duplication).
+- Comparaison entre différentes versions du projet.
+
+---
+# Suivi de l'évolution d'un projet avec SonarQube
+
+**Quality Gates et alertes**
+- Définition de seuils critiques (ex : échec du build si la couverture descend sous 80%).
+- Notifications et suivi des régressions en qualité.
+
+**Suivi des modifications et responsabilité**
+- Attribution des issues aux développeurs.
+- Visualisation des commits impactant la qualité du code.
+
+---
+# Configuration pour un projet Python
+
+Python utilise **Coverage.py** pour mesurer la couverture des tests unitaires.
+
+```bash
+pip install coverage
+coverage run -m pytest  # Exécuter les tests
+coverage xml -o coverage.xml  # Générer le rapport XML
+```
+
+Fichier **sonar-project.properties** doit inclure **sonar.python.coverage.reportPaths** pour la couverture des tests
+
+---
+
+# Intégration avec GitLab CI/CD
+
+<div class="columns">
+<div>
+
+```yaml
+stages:
+  - test
+  - analyze
+
+test:
+  script:
+    - mvn test
+    - mvn jacoco:report                       
+```
+
+</div>
+<div>
+
+```yaml
+sonarqube:
+  image: sonarsource/sonar-scanner-cli
+  stage: analyze
+  script:
+    - sonar-scanner \
+      -Dsonar.host.url=http://sonarqube:9000 \
+      -Dsonar.login=$SONAR_TOKEN
+  dependencies:
+    - test
+```
+
+</div>
+</div>
+
+---
+# Communication entre SonarQube et GitLab Runner
+
+Le **runner GitLab** doit être **connecté au même réseau** Docker que **SonarQube Server**.
+
+Le conteneur **sonaqube** doit être connu : `-Dsonar.host.url=http://sonarqube:9000 `
+
+```bash
+docker network connect sonar-network gitlab-runner
+```
+
+---
+
+# SonarCloud : Alternative cloud à SonarQube
+
+**Qu'est-ce que SonarCloud ?**
+- Plateforme cloud hébergée par SonarSource
+- Offre les mêmes fonctionnalités que SonarQube sans besoin d'infrastructure propre
+- Le runner Gitlab peut communiquer via l'url `https://sonarcloud.io`
+
+---
+# SonarQube ou SonarCloud
+
+| **SonarQube** | **SonarCloud** |
+|--------------|--------------|
+| Hébergement **on-premise** | Hébergement **dans le cloud** |
+| Nécessite une installation et une maintenance | Service géré par SonarSource |
+| Version **gratuite** (Community) et payante (Enterprise) | **Gratuit pour open source**, payant pour projets privés |
 
 ---
 <!-- _class: transition2 -->  
