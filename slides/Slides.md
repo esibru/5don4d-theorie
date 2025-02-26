@@ -1884,7 +1884,6 @@ public void processOrder() {
 - Objectif : Anticiper l'effort de refactorisation.
 
 ---
-
 # Catégories Coverage
 
 - Mesure du taux de couverture des tests unitaires.
@@ -1892,8 +1891,46 @@ public void processOrder() {
 - Objectif : Vérifier l'efficacité des tests automatisés.
 
 
+<div class="columns">
+<div>
+
+```java
+public String getMessage(String name) {
+    StringBuilder result = new StringBuilder();
+
+    if (name == null || name.isEmpty()) {
+        result.append("Please provide a name!");
+    } else {
+        result.append("Hello ").append(name);
+    }
+
+    return result.toString();
+}
+```
+
+</div>
+<div>
+
+```java
+    @Test
+    public void testName() {
+        GreetingsBuilder obj = new GreetingsBuilder();
+        assertEquals("Hello world", 
+                obj.getMessage("world"));
+    }
+```
+
 </div>
 </div>
+
+---
+# Catégories Coverage
+
+<center>
+
+![h:400px](./img/jacoco-result.png)
+
+</center>
 
 ---
 
