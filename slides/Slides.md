@@ -1511,7 +1511,7 @@ Attention : **Analyse dynamique** et **analyse statique** sont complémentaires.
 </div>
 <div>
 
-![h:450px](./img/sonarqube-architecture.png)
+![h:400px](./img/sonarqube-architecture.png)
 
 </div>
 </div>
@@ -1532,7 +1532,7 @@ Attention : **Analyse dynamique** et **analyse statique** sont complémentaires.
 </div>
 <div>
 
-![h:450px](./img/sonnar-sequence.png)
+![h:400px](./img/sonnar-sequence.png)
 
 </div>
 </div>
@@ -1990,9 +1990,7 @@ sonarqube:
 ---
 # Communication entre SonarQube et GitLab Runner
 
-Le **runner GitLab** doit être **connecté au même réseau** Docker que **SonarQube Server**.
-
-Le conteneur **sonaqube** doit être connu : `-Dsonar.host.url=http://sonarqube:9000 `
+Le **runner GitLab** doit être **connecté au même réseau** Docker que **SonarQube Server**. Le conteneur **sonaqube** est utilisé dans la variable passée la commande **sonar-scanner** : `-Dsonar.host.url=http://sonarqube:9000`
 
 ```bash
 docker network connect sonar-network gitlab-runner
