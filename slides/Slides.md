@@ -2054,16 +2054,275 @@ docker network connect sonar-network gitlab-runner
 ---
 <!-- _class: transition2 -->  
 
-Gérer l'infrastructure<br>
+Gestion d'une infrastructure
+
+--- 
+# Gestion manuelle
+
+- Les serveurs physiques sont **achetés, installés et configurés** manuellement.  
+- Les administrateurs systèmes doivent installer **l’OS, les logiciels et les configurations** à la main.  
+- Temps de déploiement long et risque d’erreur humaine.  
+
+### Exemple : 
+- Un administrateur devait connecter physiquement un serveur, installer Linux et configurer chaque paramètre individuellement.
+
+---
+# Gérer une infrastructure : Configuration
+  
+- La configuration des services (*réseau, bases de données, pare-feu, etc.*) est faite directement sur chaque machine.  
+- Les mises à jour et correctifs sont appliquées serveur par serveur.  
+- Incohérences possibles entre les environnements (**dev, test, prod**).  
+
+### Exemple : 
+- Un administrateur modifie un fichier de configuration Apache à la main sur chaque serveur, avec des risques d’erreurs.
+
+---
+# Gestion manuelle : Automatisation Partielle 
+
+- Des scripts **Bash, PowerShell ou Python** sont utilisés pour automatiser certaines tâches répétitives.  
+- Ces scripts ne sont pas standardisés.  
+
+### Exemple : 
+- Un script Bash pour installer Apache, mais qui ne gère pas les erreurs ni la reproductibilité.
+
+---
+# Gérer une infrastructure : Reproductibilité
+
+- Impossible de recréer à l’identique une infrastructure en cas de panne.  
+- Aucune traçabilité des modifications et gestion des versions compliquée.  
+
+### Exemple : 
+- Deux serveurs configurés différemment à cause d’une modification manuelle non documentée.
+
+---
+# Gérer une infrastructure : Scalabilité
+
+- Ajouter de nouveaux serveurs nécessite du **temps et des ressources humaines**.  
+- Passage au cloud complexe, car il faut provisionner les machines à la main.  
+
+### Exemple : 
+- Un pic de trafic nécessite l’achat et la configuration de nouveaux serveurs, ce qui peut prendre plusieurs jours. 
+
+---
+
+<!-- _class: cite -->    
+
+L'**Infrastructure as Code** (IaC) est une approche qui consiste à gérer et provisionner l’infrastructure informatique à l’aide de **fichiers de configuration**, plutôt que par des processus manuels ou interactifs. Elle permet **d’automatiser** la gestion des serveurs, des réseaux, des bases de données et d'autres composants via du code, ce qui garantit **cohérence**, **rapidité** et **reproductibilité**.
+
+--- 
+# Principes clés de l’Infrastructure as Code
+
+- **Automatisation** : L’infrastructure est provisionnée et gérée via du code, éliminant les interventions manuelles et réduisant les erreurs humaines.
+
+- **Versionnement** : Les configurations sont stockées dans des fichiers texte, permettant un suivi des modifications et une collaboration efficace via des outils comme **Git**.
+
+- **Reproductibilité** : Grâce à des fichiers de configuration, il est possible de recréer un environnement identique à tout moment (test, développement, production).
+
+--- 
+# Principes clés de l’Infrastructure as Code
+
+- **Déclaratif vs Impératif** :
+  - **Déclaratif** : On définit l’état final souhaité et l’outil se charge d’y parvenir (*ex. : Terraform*).  
+  - **Impératif** : On décrit chaque étape pour atteindre l’objectif (*ex. : Ansible*).
+
+- **Scalabilité & Cohérence** : L'IaC permet de gérer des infrastructures complexes et évolutives tout en garantissant des configurations homogènes sur tous les environnements.
+
+- **Modularité et Réutilisabilité** :
+  - Découper l’infrastructure en **modules réutilisables**.  
+  - Factoriser le code pour éviter la duplication.  
+
+---
+# Bonnes pratiques inspirée du monde du développement
+
+- Utiliser un **gestionnaire de version** (*Git, GitLab, GitHub*).   
+- Intégrer l’IaC dans les pipelines **CI/CD** (*ex. : Terraform avec GitHub Actions*).  
+- Automatiser les **tests d’infrastructure** (*ex. : Terratest, Inspec*).  
+- Un script doit produire **le même état final** même après plusieurs exécutions.  
+- Privilégier une **approche déclarative** (ex. : Terraform, Ansible).  
+- Ne jamais stocker des **secrets en dur** dans le code.  
+- Maintenir une **documentation claire et à jour** (*README, Wiki, commentaires*).  
+- Rendre l’infrastructure **compréhensible** pour toute l’équipe.  
+
+---
+
+<!-- _class: cite -->  
+
+Le **provisioning** (ou approvisionnement en français) est le processus d'installation, de configuration et de mise à disposition des ressources informatiques nécessaires pour faire fonctionner une application ou un système. 
+
+---
+# Comment intéragir avec l'infrastructure ?
+
+### Provisioning via Interface Utilisateur (UI)  
+- Utilisation d’une **console graphique** ou d’une interface web fournie par un fournisseur de cloud ou un outil d’administration.  
+- Convient aux **déploiements ponctuels** ou aux utilisateurs non techniques.  
+- Risque d’erreur humaine et **difficulté à reproduire** le même environnement.  
+
+### Exemple : 
+- Créer une machine virtuelle sur AWS via la console web.
+
+---
+# Comment intéragir avec l'infrastructure ?
+
+## Provisioning via API et CLI  
+- Utilisation d’**API REST** ou d’une **ligne de commande (CLI)** pour interagir avec les services d’un fournisseur cloud.  
+- Plus rapide et plus flexible que l’UI, permet **l’automatisation partielle**.  
+- Peut être utilisé dans des **scripts** mais manque souvent de gestion complète du cycle de vie des infrastructures.  
+
+### Exemple : 
+- Lancer une instance AWS EC2 avec la commande `aws ec2 run-instances`.
+
+---
+# Comment intéragir avec l'infrastructure ?
+
+## Provisioning via Infrastructure as Code  
+- Automatisation complète via des outils comme **Terraform, Ansible, CloudFormation**.  
+- Déploiement **déclaratif** et **reproductible** avec un suivi des versions.  
+- Adapté aux **grands environnements**, facilite la scalabilité et la gestion d’infrastructures complexes.  
+
+### Exemple : 
+- Définir une infrastructure complète dans un fichier Terraform et l’appliquer avec `terraform apply`.
+
+---
+# Comment intéragir avec l'infrastructure ?
+
+| Méthode | UI | API / CLI | IaC |
+|------------|------|-----------|------|
+| **Automatisation** | Aucune | Partielle | Complète |
+| **Reproductibilité** | Difficile | Moyenne | Excellente |
+| **Scalabilité** | Faible | Moyenne | Forte |
+| **Traçabilité** | Limitée | Moyenne | Versionnée avec Git |
+
+---
+# Outils Multi-Cloud 
+
+### Terraform  
+- Basé sur un langage déclaratif (**HCL**).  
+- Compatible avec **AWS, Azure, GCP, VMware, Kubernetes**, etc.  
+- Permet la gestion de l’ensemble du cycle de vie des infrastructures.  
+
+### Ansible  
+- Outil **d’automatisation de configuration** et de gestion des serveurs.  
+- Basé sur un **langage déclaratif (YAML)**.  
+- Fonctionne en mode **agentless** (pas besoin d’installation sur les machines cibles).  
+
+---
+# Outils Spécifiques à un Cloud 
+
+### AWS CloudFormation  
+- Service de **provisionnement d’infrastructure** pour **AWS**.  
+- Utilise **YAML ou JSON** pour définir les ressources.  
+- Étroitement intégré avec tous les services AWS.  
+
+### Azure Resource Manager (ARM)  
+- Outil de gestion d’infrastructure pour **Microsoft Azure**.  
+- Utilise des **templates JSON ou Bicep**.  
+- Permet un déploiement cohérent des ressources Azure.  
+
+---
+# Outils Spécifiques à un Cloud 
+
+### Google Cloud Deployment Manager  
+- Outil de provisionnement d’infrastructure pour **Google Cloud**.  
+- Utilise **YAML, JSON et Python**.  
+- Permet de gérer des infrastructures complexes sur GCP.  
+
+---
+<!-- _class: transition2 -->  
+
 Terraform
 
 --- 
 
-<div>         
- 
-![h:450px](./img/work-in-progress.jpeg)
-   
-</div> 
+# Terraform Core  
+
+- Moteur de gestion d’infrastructure  
+- Approche **déclarative** vs **impérative**  
+
+---
+
+# Terraform Providers  
+- Interface avec les fournisseurs  
+- Exemples : AWS, Azure, GCP, VirtualBox  
+
+---
+# Gestion du Cycle de Vie
+
+<center>
+
+![h:450](./img/terraform-life-cycle.png)
+
+</center>
+
+---
+# Commandes clés
+
+| Commande                 | Description |
+|--------------------------|------------|
+| `terraform init`        | Initialise un répertoire Terraform (télécharge les providers nécessaires). |
+| `terraform plan`        | Affiche un aperçu des changements qui seront appliqués. |
+| `terraform apply`       | Applique la configuration et crée/modifie l'infrastructure. |
+| `terraform destroy`     | Supprime toutes les ressources définies dans la configuration. |
+| `terraform validate`    | Vérifie que la configuration est correcte syntaxiquement. |
+| `terraform fmt`         | Formate les fichiers Terraform pour une meilleure lisibilité. |
+| `terraform refresh`     | Met à jour le state file en fonction des ressources existantes. |
+| `terraform output`      | Affiche les valeurs des outputs définis dans la configuration. |
+
+---
+# Fichiers de Configuration Terraform
+
+## Configuration File (`.tf`)  
+
+```hcl
+provider "aws" {
+  region = "us-west-2"
+}
+
+resource "aws_instance" "example" {
+  ami           = "ami-123456"
+  instance_type = "t2.micro"
+}
+```
+
+---
+# Variables et Outputs
+
+---
+# State file
+
+Terraform State File (terraform.tfstate)
+
+Contient l’état de l’infrastructure
+Dangers : Secrets stockés en clair
+
+---
+# Secret dans le state file
+
+---
+# Utiliser des Modules
+
+---
+# Structure d'un dépôt git
+---
+# Déploiement selon les Environnements
+Staging, Dev, Prod
+
+    Environnement Dev : Tests rapides
+    Staging  : Simulation de la production
+    Production  : Infra stable et scalable
+
+Meilleures pratiques :
+ Séparer les fichiers de configuration
+Automatiser avec CI/CD
+
+---
+# Terraform Cloud & Remote Backend
+Pourquoi un backend distant ?
+
+Avantages de Terraform Cloud :
+
+    Collaboration en équipe
+    Stockage sécurisé du state
+    Workspaces multi-environnements
 
 ---
 <!-- _class: transition2 -->  
