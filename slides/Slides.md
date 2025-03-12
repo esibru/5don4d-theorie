@@ -153,6 +153,7 @@ DevOps est une **culture** et un ensemble de **pratiques** visant à améliorer 
 ### Monitoring
 - **Prometheus**, **Grafana**
 </div>
+</div>
 
 ---        
      
@@ -2214,9 +2215,165 @@ Le **provisioning** (ou approvisionnement en français) est le processus d'insta
 ---
 <!-- _class: transition2 -->  
 
-Solutions cloud
+Une solution cloud<br>
+Google Cloud for Education
 
 ---
+# Google cloud
+
+Google Cloud Platform (**GCP**) est un ensemble de services **cloud** proposés par **Google**. Il permet d’héberger des applications, de stocker des données, d'exécuter des machines virtuelles et de gérer des infrastructures réseau.
+
+---
+# Page des crédits et de la facturation
+
+- Permet de consulter l’état des crédits gratuits de GCP 
+
+- 300$ pour les nouveaux utilisateurs
+
+- Accès aux détails de facturation, gestion des coûts et optimisation de l’utilisation des ressources
+
+- [https://console.cloud.google.com/billing](https://console.cloud.google.com/billing)
+
+---
+# Page des machines virtuelles : Compute Engine
+
+- Permet de créer, gérer et surveiller les machines virtuelles
+
+- Configuration des CPU, de la mémoire, du stockage et des images système (Debian, Ubuntu, Windows, etc.)
+
+- [https://console.cloud.google.com/compute](https://console.cloud.google.com/compute)
+---
+# Page des réseaux et pare-feu
+
+- Permet de configurer des VPC : *Virtual Private Cloud*
+
+- Gestion des sous-réseaux, des IP publiques et privées
+
+- Création et gestion des règles de pare-feu pour contrôler le trafic entrant et sortant
+
+ - [https://console.cloud.google.com/networking/networks](https://console.cloud.google.com/networking/networks)
+
+---
+# Page Identity & Access Management (IAM)
+
+- Gestion des comptes de service et des permissions d'accès aux ressources.
+
+- Génération et rotation des *clés API* et des clés de service.
+
+- [https://console.cloud.google.com/iam-admin](https://console.cloud.google.com/iam-admin)
+
+---
+# Déployer une application web via l'interface
+
+- *Créer* et *configurer* un réseau *VPC*
+
+- Ajouter un *sous-réseau* et définir *une plage d'adresse IP*
+
+- *Créer* une instance *Compute Engine* (machine virtuelle)
+
+- *Configurer l'OS* de la machine virtuelle
+
+- *Installer* via un script *les outils* sur la machine virtuelle
+
+---
+# Déployer une application web via l'interface
+
+- *Connecter* la machine virtuelle *au sous-réseau*
+
+- *Configurer* des règles de *pare-feu* : 
+  -  Permettre les connexions *SSH*
+  - Autoriser les connexions entrantes sur un port pour le traffic *HTTP* 
+
+- *Uploader* l'application via ssh
+---
+# Déployer une application avec le client
+
+```bash
+gcloud auth login
+
+gcloud config set project $PROJECT_ID
+
+gcloud compute networks create $NETWORK_NAME \
+  --subnet-mode=custom \
+  --mtu=1460
+
+gcloud compute networks subnets create $SUBNET_NAME \
+  --network=$NETWORK_NAME \
+  --region=us-west1 \
+  --range=$SUBNET_RANGE
+```
+
+---
+# Déployer une application avec le client
+
+```bash
+gcloud compute instances create $INSTANCE_NAME \
+  --machine-type=$MACHINE_TYPE \
+  --zone=us-west1-a \
+  --image-project=debian-cloud \
+  --image=$IMAGE \
+  --tags=ssh \
+  --subnet=$SUBNET_NAME \
+  --metadata=startup-script="$(cat <<EOF
+#!/bin/bash
+sudo apt-get update
+sudo apt-get install -yq build-essential python3-pip rsync
+pip install flask
+EOF
+)"
+```
+
+---
+# Déployer une application avec le client
+
+```bash
+gcloud compute firewall-rules create $FIREWALL_SSH \
+  --allow=tcp:22 \
+  --direction=INGRESS \
+  --network=$NETWORK_NAME \
+  --priority=1000 \
+  --source-ranges=0.0.0.0/0 \
+  --target-tags=ssh
+
+gcloud compute firewall-rules create $FIREWALL_FLASK \
+  --allow=tcp:5000 \
+  --network=$NETWORK_NAME \
+  --source-ranges=0.0.0.0/0
+```
+
+---
+# Comparaison des nomenclatures et commandes
+
+| **Critère**                 | **Google Cloud**      | **Microsoft Azure**        | **Amazon Web Services**      |
+|-----------------------------|-----------------------|----------------------------|------------------------------|
+| **Interface en ligne de commande** | `gcloud`                          | `az`                             | `aws`                             |
+| **Authentification**        | `gcloud auth login`             | `az login`                      | `aws configure`                  |
+
+---
+# Comparaison
+
+| **Critère**                 | **Google Cloud**      | **Microsoft Azure**        | **Amazon Web Services**      |
+|-----------------------------|-----------------------|----------------------------|------------------------------|
+| **Page Identity & Access Management**     | **IAM & Admin**                 | **Azure Active Directory (AAD)** | **AWS IAM** |
+| **Gestion des comptes IAM** | `gcloud iam service-accounts list` | `az ad sp list`                  | `aws iam list-users`              |
+
+
+---
+# Comparaison
+
+| **Critère**                 | **Google Cloud**      | **Microsoft Azure**        | **Amazon Web Services**      |
+|-----------------------------|-----------------------|----------------------------|------------------------------|
+| **Page de gestion des VM**  | **Compute Engine**              | **Azure Virtual Machines**       | **Amazon EC2 (Elastic Compute Cloud)** |
+| **Création d’une VM**       | `gcloud compute instances create my-vm` | `az vm create --name MaVM`       | `aws ec2 run-instances --image-id ami-12345678 --count 1 --instance-type t2.micro` |
+
+---
+# Comparaison
+| **Critère**                 | **Google Cloud**      | **Microsoft Azure**        | **Amazon Web Services**      |
+|-----------------------------|-----------------------|----------------------------|------------------------------|
+| **Gestion des réseaux**     | `gcloud compute networks list`  | `az network vnet list`           | `aws ec2 describe-vpcs`          |
+| **Page de gestion des réseaux** | **VPC Networks** (gestion des réseaux VPC et sous-réseaux) | **Azure Virtual Network (VNet)** | **Amazon VPC (Virtual Private Cloud)** |
+| **Gestion des pare-feu**    | `gcloud compute firewall-rules list` | `az network nsg list`            | `aws ec2 describe-security-groups` |
+| **Page de gestion des pare-feu** | **Firewall Rules**            | **Network Security Groups (NSG)** | **Security Groups & NACL (Network ACLs)** |
 
 ---
 <!-- _class: transition2 -->  
