@@ -2418,8 +2418,6 @@ Un fichier .tf est écrit en **HCL** et contient plusieurs blocs avec des attrib
 ---
 # Définition d’un fournisseur
 
-<center>
-
 ```properties
 provider "google" {
   project = "devops-demo-453409"
@@ -2427,7 +2425,6 @@ provider "google" {
   zone    = "us-central1-c"
 }
 ```
-</center>  
 
 ### Explications :
 
@@ -2440,8 +2437,6 @@ provider "google" {
 ---
 # Définition d’une ressource
 
-<center>
-
 ```properties
 resource "google_compute_network" "vpc_network" {
   name                    = "my-custom-mode-network"
@@ -2449,7 +2444,6 @@ resource "google_compute_network" "vpc_network" {
   mtu                     = 1460
 }
 ```
-</center>
 
 ### Explications :
 
@@ -2462,8 +2456,6 @@ resource "google_compute_network" "vpc_network" {
 ---
 # Définition d’une ressource
 
-<center>
-
 ```properties
 resource "google_compute_network" "vpc_network" {
   name                    = "my-custom-mode-network"
@@ -2471,8 +2463,6 @@ resource "google_compute_network" "vpc_network" {
   mtu                     = 1460
 }
 ```
-</center>
-
 ### Explications :
 
 - **Attributs** :
@@ -2486,8 +2476,6 @@ resource "google_compute_network" "vpc_network" {
 ---
 # Définition d’un sous-réseau
 
-<center>
-
 ```properties
 resource "google_compute_subnetwork" "default" {
   name          = "my-custom-subnet"
@@ -2496,7 +2484,6 @@ resource "google_compute_subnetwork" "default" {
   network       = google_compute_network.vpc_network.id
 }
 ```
-</center>
 
 ### Explications :
 - *ip_cidr_range = "10.0.1.0/24"* : Définit la plage d’adresses IP du sous-réseau.
@@ -2505,8 +2492,6 @@ resource "google_compute_subnetwork" "default" {
 
 ---
 # Définition d’une machine virtuelle
-
-<center>
 
 ```properties
 resource "google_compute_instance" "default" {
@@ -2518,7 +2503,6 @@ resource "google_compute_instance" "default" {
   network_interface {...}
 }
 ```
-</center>
 
 ### Explications :
 
