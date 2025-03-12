@@ -2203,14 +2203,10 @@ Le **provisioning** (ou approvisionnement en français) est le processus d'insta
 
 - Compatible avec **AWS, Azure, GCP, VMware, Kubernetes**, etc.  
 
-- Permet la gestion de l’ensemble du cycle de vie des infrastructures.  
-
 ### Ansible  
 - Outil **d’automatisation de configuration** et de gestion des serveurs.  
 
 - Basé sur un **langage déclaratif (YAML)**.  
-
-- Fonctionne en mode **agentless** (pas d’installation sur les machines cibles).  
 
 ---
 <!-- _class: transition2 -->  
@@ -2378,42 +2374,121 @@ gcloud compute firewall-rules create $FIREWALL_FLASK \
 ---
 <!-- _class: transition2 -->  
 
-Terraform
+Outil IaC : Terraform
 
 --- 
 # Installation
 
---- 
-# Terraform Core  
+## Terraform core
 
-- Moteur de gestion d’infrastructure  
-- Approche **déclarative** vs **impérative**  
+- [Téléchargement et installation locale](https://developer.hashicorp.com/terraform/install)
+
+- [Utilisation de l'image docker](https://hub.docker.com/r/hashicorp/terraform)
+
+## Terraform Providers  
+
+- [Interfaces avec les fournisseurs](https://registry.terraform.io/browse/providers)
+
+- Exemples : AWS, Google Cloud Platform, Microsoft Azure, VirtualBox  
 
 ---
+# Terraform configuration file
 
-# Terraform Providers  
-- Interface avec les fournisseurs  
-- Exemples : AWS, Azure, GCP, VirtualBox  
+Un fichier .tf est un fichier texte utilisé par Terraform pour provisionner des ressources sur le **Cloud** ou sur des **infrastructures locales**.
+
+- Définit les **fournisseurs** Cloud utilisés
+
+- Déclare les **ressources** à créer (VMs, réseaux, bases de données, etc.)
+
+- Configure les **variables** pour rendre le code réutilisable
+
+- **Applique des dépendances** et des relations entre ressources
 
 ---
-# Fichiers de Configuration main.tf
+# HashiCorp Configuration Language
 
-<div class="columns">
-<div> 
+Un fichier .tf est écrit en **HCL** et contient plusieurs blocs avec des attributs et des valeurs : 
 
-```hcl
+- **Blocs** (*{}*) : Un bloc définit un élément de configuration (terraform, provider, resource)
+
+- **Attributs** (*clé = valeur*) : Chaque bloc contient des attributs (source, version)
+
+- **Chaînes** (*"texte"*) : Les valeurs textuelles sont entre guillemets ("hashicorp/google")
+
+---
+# Définition d’un fournisseur
+
+<center>
+
+```properties
 provider "google" {
   project = "devops-demo-453409"
   region  = "us-central1"
   zone    = "us-central1-c"
 }
+```
+</center>  
 
+### Explications :
+
+- **provider** : Mot-clé pour définir un fournisseur.
+
+- **"google"** : Déclare l’utilisation de Google Cloud
+
+- **Attributs** (project, region, zone) : Configurent le projet GCP
+ 
+---
+# Définition d’une ressource
+
+<center>
+
+```properties
 resource "google_compute_network" "vpc_network" {
   name                    = "my-custom-mode-network"
   auto_create_subnetworks = false
   mtu                     = 1460
 }
+```
+</center>
 
+### Explications :
+
+- **resource** : Mot-clé pour définir une ressource
+
+- google_compute_network : Type de ressource (réseau VPC sur GCP)
+
+- "vpc_network" : Nom logique dans Terraform pour cette ressource
+
+---
+# Définition d’une ressource
+
+<center>
+
+```properties
+resource "google_compute_network" "vpc_network" {
+  name                    = "my-custom-mode-network"
+  auto_create_subnetworks = false
+  mtu                     = 1460
+}
+```
+</center>
+
+### Explications :
+
+- **Attributs** :
+
+  - **name** : Nom du VPC
+
+  - **auto_create_subnetworks** : Création automatique de sous-réseaux
+
+  - **mtu** : Définit la taille des paquets réseau
+
+---
+# Définition d’un sous-réseau
+
+<center>
+
+```properties
 resource "google_compute_subnetwork" "default" {
   name          = "my-custom-subnet"
   ip_cidr_range = "10.0.1.0/24"
@@ -2421,47 +2496,40 @@ resource "google_compute_subnetwork" "default" {
   network       = google_compute_network.vpc_network.id
 }
 ```
+</center>
 
-</div> 
-<div>
+### Explications :
+- *ip_cidr_range = "10.0.1.0/24"* : Définit la plage d’adresses IP du sous-réseau.
 
-```hcl
+- *network = google_compute_network.vpc_network.id* : Fait référence au réseau VPC créé précédemment.
+
+---
+# Définition d’une machine virtuelle
+
+<center>
+
+```properties
 resource "google_compute_instance" "default" {
-  name         = "flask-vm"
-  machine_type = "f1-micro"
-  zone         = "us-west1-a"
-  tags         = ["ssh"]
+...
+  boot_disk {...}
 
-  boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-11"
-    }
-  }
+  metadata_startup_script = ...
 
-  # Install Flask
-  metadata_startup_script = "sudo apt-get update; 
-  sudo apt-get install -yq build-essential python3-pip rsync; 
-  pip install flask"
-
-  network_interface {
-    subnetwork = google_compute_subnetwork.default.id
-
-    access_config {
-      # Include this section to give the VM an external IP address
-    }
-  }
+  network_interface {...}
 }
 ```
+</center>
 
-</div>
-</div>
+### Explications :
+
+- **Blocs imbriqués** : HCL permet d’écrire des blocs à l’intérieur d’autres blocs (boot_disk, network_interface).
 
 ---
 # Gestion du Cycle de Vie
 
 <center>
 
-![h:450](./img/terraform-life-cycle.png)
+![h:400](./img/terraform-life-cycle.png)
 
 </center>
 
@@ -2471,56 +2539,109 @@ resource "google_compute_instance" "default" {
 | Commande                 | Description |
 |--------------------------|------------|
 | `terraform init`        | Initialise un répertoire Terraform (télécharge les providers nécessaires). |
+| `terraform validate`    | Vérifie que la configuration est correcte syntaxiquement. |
 | `terraform plan`        | Affiche un aperçu des changements qui seront appliqués. |
 | `terraform apply`       | Applique la configuration et crée/modifie l'infrastructure. |
 | `terraform destroy`     | Supprime toutes les ressources définies dans la configuration. |
-| `terraform validate`    | Vérifie que la configuration est correcte syntaxiquement. |
 | `terraform fmt`         | Formate les fichiers Terraform pour une meilleure lisibilité. |
-| `terraform refresh`     | Met à jour le state file en fonction des ressources existantes. |
 | `terraform output`      | Affiche les valeurs des outputs définis dans la configuration. |
 
+---
+# Authentification auprès du fournisseur
+
+- Télécharger la **clé d'authentification** (JSON pour GCP)
+
+- Exporter la variable d'environnement **GOOGLE_APPLICATION_CREDENTIALS**
+
+  - Linux : `export GOOGLE_APPLICATION_CREDENTIALS="config\gcloud\devops-demo-453409-3cf8858637b8.json"`
+
+  - PowerShell : `$env:GOOGLE_APPLICATION_CREDENTIALS="config\gcloud\devops-demo-453409-3cf8858637b8.json"`
 
 
 ---
-# Variables et Outputs
+# Plusieurs fichiers tf pour gérer les variables
 
----
-# State file
+<div class="columns">
+<div>
 
-Terraform State File (terraform.tfstate)
+### variables.tf
 
-Contient l’état de l’infrastructure
-Dangers : Secrets stockés en clair
+```properties
+variable "project_name" {
+  description = "Nom du projet"
+  type        = string
+}
 
----
-# Secret dans le state file
+variable "region" {
+  description = "Déployer les ressources"
+  type        = string
+  default     = "us-central1"
+}
+```
+</div>  
+<div>    
+
+### terraform.tfvars
+```properties
+project_name = "my-project"
+instance_type = "n1-standard-1"
+```
+
+### main.tf
+
+```properties
+provider "google" {
+  project = var.project_name
+  region  = var.region
+}
+
+```
+
+</div>    
+</div> 
 
 ---
 # Utiliser des Modules
 
+- Un module Terraform est un ensemble de configurations Terraform regroupées dans un répertoire.
+
+- Vous pouvez réutiliser le même module dans différents projets ou environnements sans dupliquer le code.
+
+- Les modules peuvent être partagés entre équipes ou projets via des dépôts Git, [Terraform Registry](https://registry.terraform.io/browse/modules)
+
 ---
 # Structure d'un dépôt git
----
-# Déploiement selon les Environnements
-Staging, Dev, Prod
-
-    Environnement Dev : Tests rapides
-    Staging  : Simulation de la production
-    Production  : Infra stable et scalable
-
-Meilleures pratiques :
- Séparer les fichiers de configuration
-Automatiser avec CI/CD
+```sh
+my-project/
+│
+├── Dockerfile                  # Définition de l'image Docker
+├── docker-compose.yml          # Configuration des services Docker
+│
+├── terraform/                  # Répertoire pour les fichiers Terraform
+│   ├── main.tf                 # Fichier principal de configuration Terraform
+│   ├── variables.tf            # Définition des variables Terraform
+│   ├── outputs.tf              # Définitions des outputs de Terraform
+│   └── provider.tf             # Configuration du provider (par exemple, AWS, Google Cloud)
+│
+├── scripts/                    # Scripts utiles pour l'automatisation ou la configuration
+│   └── setup.sh                # Par exemple, un script pour initialiser l'environnement
+│
+├── .gitignore                  # Fichier pour ignorer certains fichiers (ex. fichiers Terraform, Docker)
+├── README.md                   # Documentation du projet
+├── .dockerignore               # Fichier pour ignorer certains fichiers dans Docker
+└── src/                        # Code de l'application
+```
 
 ---
 # Terraform Cloud & Remote Backend
-Pourquoi un backend distant ?
 
 Avantages de Terraform Cloud :
 
-    Collaboration en équipe
-    Stockage sécurisé du state
-    Workspaces multi-environnements
+- Collaboration en équipe
+
+- Stockage sécurisé du state
+
+- Workspaces multi-environnements
 
 ---
 <!-- _class: transition2 -->  
