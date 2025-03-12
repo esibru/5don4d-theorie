@@ -2059,92 +2059,81 @@ Gestion d'une infrastructure
 --- 
 # Gestion manuelle
 
-- Les serveurs physiques sont **achetés, installés et configurés** manuellement.  
-- Les administrateurs systèmes doivent installer **l’OS, les logiciels et les configurations** à la main.  
-- Temps de déploiement long et risque d’erreur humaine.  
+- **Serveurs physiques** achetés, installés et configurés manuellement. 
 
-### Exemple : 
-- Un administrateur devait connecter physiquement un serveur, installer Linux et configurer chaque paramètre individuellement.
+- **Administrateurs** installent *OS, logiciels et configurations (réseau, bases de données, pare-feu, etc.)* sur chaque machine. 
 
----
-# Gérer une infrastructure : Configuration
-  
-- La configuration des services (*réseau, bases de données, pare-feu, etc.*) est faite directement sur chaque machine.  
-- Les mises à jour et correctifs sont appliquées serveur par serveur.  
+- **Temps de déploiement** long avec un risque d’*erreur humaine*.  
+
+- **Mises à jour**  appliquées *serveur par serveur*.  
+
 - Incohérences possibles entre les environnements (**dev, test, prod**).  
-
-### Exemple : 
-- Un administrateur modifie un fichier de configuration Apache à la main sur chaque serveur, avec des risques d’erreurs.
 
 ---
 # Gestion manuelle : Automatisation Partielle 
-
+### Une première améioration :
 - Des scripts **Bash, PowerShell ou Python** sont utilisés pour automatiser certaines tâches répétitives.  
+
 - Ces scripts ne sont pas standardisés.  
 
 ### Exemple : 
 - Un script Bash pour installer Apache, mais qui ne gère pas les erreurs ni la reproductibilité.
 
 ---
-# Gérer une infrastructure : Reproductibilité
+# Gérer une infrastructure : Limitations
 
-- Impossible de recréer à l’identique une infrastructure en cas de panne.  
-- Aucune traçabilité des modifications et gestion des versions compliquée.  
+- Difficulté de **recréer à l’identique** une infrastructure en cas de panne ou de bugs détectés sur un serveur.  
+
+- **Aucune traçabilité des modifications** et gestion des versions compliquée.  
+
+- Ajouter de nouveaux serveurs nécessite du **temps et des ressources humaines**.  
 
 ### Exemple : 
 - Deux serveurs configurés différemment à cause d’une modification manuelle non documentée.
-
----
-# Gérer une infrastructure : Scalabilité
-
-- Ajouter de nouveaux serveurs nécessite du **temps et des ressources humaines**.  
-- Passage au cloud complexe, car il faut provisionner les machines à la main.  
-
-### Exemple : 
 - Un pic de trafic nécessite l’achat et la configuration de nouveaux serveurs, ce qui peut prendre plusieurs jours. 
 
 ---
 
 <!-- _class: cite -->    
 
-L'**Infrastructure as Code** (IaC) est une approche qui consiste à gérer et provisionner l’infrastructure informatique à l’aide de **fichiers de configuration**, plutôt que par des processus manuels ou interactifs. Elle permet **d’automatiser** la gestion des serveurs, des réseaux, des bases de données et d'autres composants via du code, ce qui garantit **cohérence**, **rapidité** et **reproductibilité**.
+L'**Infrastructure as Code** (IaC) est une approche qui consiste à gérer et provisionner l’infrastructure informatique à l’aide de **fichiers de configuration** plutôt que par des processus manuels ou interactifs. Elle permet **d’automatiser** la gestion des serveurs, des réseaux, des bases de données et d'autres composants via du code, ce qui garantit **cohérence**, **rapidité** et **reproductibilité**.
 
 --- 
 # Principes clés de l’Infrastructure as Code
 
-- **Automatisation** : L’infrastructure est provisionnée et gérée via du code, éliminant les interventions manuelles et réduisant les erreurs humaines.
+- **Automatisation** : L’infrastructure est gérée via du code, *éliminant les interventions manuelles* et réduisant les erreurs humaines.
 
-- **Versionnement** : Les configurations sont stockées dans des fichiers texte, permettant un suivi des modifications et une collaboration efficace via des outils comme **Git**.
+- **Versionnement** : Les *configurations* sont stockées dans des *fichiers* texte, permettant un suivi des modifications et une collaboration efficace via des outils comme *Git*.
 
-- **Reproductibilité** : Grâce à des fichiers de configuration, il est possible de recréer un environnement identique à tout moment (test, développement, production).
+- **Reproductibilité** : Grâce à des fichiers de configuration, il est possible de *recréer un environnement identique* à tout moment (test, développement, production).
 
 --- 
 # Principes clés de l’Infrastructure as Code
 
-- **Déclaratif vs Impératif** :
-  - **Déclaratif** : On définit l’état final souhaité et l’outil se charge d’y parvenir (*ex. : Terraform*).  
-  - **Impératif** : On décrit chaque étape pour atteindre l’objectif (*ex. : Ansible*).
+- **Déclaratif** : On définit l’état final souhaité et un outil se charge d’y parvenir.
 
-- **Scalabilité & Cohérence** : L'IaC permet de gérer des infrastructures complexes et évolutives tout en garantissant des configurations homogènes sur tous les environnements.
+- **Scalabilité** : Gestion des infrastructures *évolutives*.
 
-- **Modularité et Réutilisabilité** :
-  - Découper l’infrastructure en **modules réutilisables**.  
-  - Factoriser le code pour éviter la duplication.  
+- **Modularité et Réutilisabilité** : Découper l’infrastructure en *modules réutilisables* en *factorisant* le code pour éviter la duplication.  
 
 ---
 # Bonnes pratiques inspirée du monde du développement
 
-- Utiliser un **gestionnaire de version** (*Git, GitLab, GitHub*).   
-- Intégrer l’IaC dans les pipelines **CI/CD** (*ex. : Terraform avec GitHub Actions*).  
-- Automatiser les **tests d’infrastructure** (*ex. : Terratest, Inspec*).  
-- Un script doit produire **le même état final** même après plusieurs exécutions.  
-- Privilégier une **approche déclarative** (ex. : Terraform, Ansible).  
-- Ne jamais stocker des **secrets en dur** dans le code.  
-- Maintenir une **documentation claire et à jour** (*README, Wiki, commentaires*).  
-- Rendre l’infrastructure **compréhensible** pour toute l’équipe.  
+- Utiliser un **gestionnaire de version**
+
+- Intégrer l’IaC dans les pipelines **CI/CD**   
+
+- Automatiser les **tests d’infrastructure**  
+
+- Un script produit **le même état final** même après plusieurs exécutions
+
+- Ne jamais stocker des **secrets en dur** dans le code
+
+- Maintenir une **documentation claire et à jour** 
+
+- Rendre l’infrastructure **compréhensible** pour toute l’équipe
 
 ---
-
 <!-- _class: cite -->  
 
 Le **provisioning** (ou approvisionnement en français) est le processus d'installation, de configuration et de mise à disposition des ressources informatiques nécessaires pour faire fonctionner une application ou un système. 
@@ -2158,14 +2147,16 @@ Le **provisioning** (ou approvisionnement en français) est le processus d'insta
 - Risque d’erreur humaine et **difficulté à reproduire** le même environnement.  
 
 ### Exemple : 
-- Créer une machine virtuelle sur AWS via la console web.
+- Créer une machine virtuelle sur Google Cloud via la console web.
 
 ---
 # Comment intéragir avec l'infrastructure ?
 
 ## Provisioning via API et CLI  
 - Utilisation d’**API REST** ou d’une **ligne de commande (CLI)** pour interagir avec les services d’un fournisseur cloud.  
+
 - Plus rapide et plus flexible que l’UI, permet **l’automatisation partielle**.  
+
 - Peut être utilisé dans des **scripts** mais manque souvent de gestion complète du cycle de vie des infrastructures.  
 
 ### Exemple : 
@@ -2176,11 +2167,10 @@ Le **provisioning** (ou approvisionnement en français) est le processus d'insta
 
 ## Provisioning via Infrastructure as Code  
 - Automatisation complète via des outils comme **Terraform, Ansible, CloudFormation**.  
-- Déploiement **déclaratif** et **reproductible** avec un suivi des versions.  
-- Adapté aux **grands environnements**, facilite la scalabilité et la gestion d’infrastructures complexes.  
 
-### Exemple : 
-- Définir une infrastructure complète dans un fichier Terraform et l’appliquer avec `terraform apply`.
+- Déploiement **déclaratif** et **reproductible** avec un suivi des versions.  
+
+- Adapté aux **grands environnements**, facilite la scalabilité et la gestion d’infrastructures complexes.  
 
 ---
 # Comment intéragir avec l'infrastructure ?
@@ -2193,38 +2183,40 @@ Le **provisioning** (ou approvisionnement en français) est le processus d'insta
 | **Traçabilité** | Limitée | Moyenne | Versionnée avec Git |
 
 ---
-# Outils Multi-Cloud 
+# Outils IaC spécifiques à un Cloud 
+
+### AWS CloudFormation pour *Amazon Web Services*
+- Utilise **YAML ou JSON** pour définir les ressources.  
+
+### Azure Resource Manager (ARM) pour *Microsoft Azure*
+- Utilise des **templates JSON ou Bicep**.  
+
+### Google Cloud Deployment Manager pour *Google Cloud*
+- Utilise **YAML, JSON et Python**.  
+
+---
+# Outils IaC Multi-Cloud 
 
 ### Terraform  
 - Basé sur un langage déclaratif (**HCL**).  
+
 - Compatible avec **AWS, Azure, GCP, VMware, Kubernetes**, etc.  
+
 - Permet la gestion de l’ensemble du cycle de vie des infrastructures.  
 
 ### Ansible  
 - Outil **d’automatisation de configuration** et de gestion des serveurs.  
+
 - Basé sur un **langage déclaratif (YAML)**.  
-- Fonctionne en mode **agentless** (pas besoin d’installation sur les machines cibles).  
+
+- Fonctionne en mode **agentless** (pas d’installation sur les machines cibles).  
 
 ---
-# Outils Spécifiques à un Cloud 
+<!-- _class: transition2 -->  
 
-### AWS CloudFormation  
-- Service de **provisionnement d’infrastructure** pour **AWS**.  
-- Utilise **YAML ou JSON** pour définir les ressources.  
-- Étroitement intégré avec tous les services AWS.  
-
-### Azure Resource Manager (ARM)  
-- Outil de gestion d’infrastructure pour **Microsoft Azure**.  
-- Utilise des **templates JSON ou Bicep**.  
-- Permet un déploiement cohérent des ressources Azure.  
+Solutions cloud
 
 ---
-# Outils Spécifiques à un Cloud 
-
-### Google Cloud Deployment Manager  
-- Outil de provisionnement d’infrastructure pour **Google Cloud**.  
-- Utilise **YAML, JSON et Python**.  
-- Permet de gérer des infrastructures complexes sur GCP.  
 
 ---
 <!-- _class: transition2 -->  
