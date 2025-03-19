@@ -2596,24 +2596,20 @@ provider "google" {
 ---
 # Structure d'un dépôt git
 ```sh
-my-project/
+mon-projet/
 │
-├── Dockerfile                  # Définition de l'image Docker
-├── docker-compose.yml          # Configuration des services Docker
+├── .gitlab-ci.yml                # Pipeline GitLab CI
+├── Dockerfile                    # Dockerfile pour construire l'image du projet
+├── docker-compose.yml            # Fichier Docker Compose pour l'orchestration de conteneurs
+├── sonar-project.properties      # Fichier de configuration SonarQube
+├── terraform/                    # Infrastructure as Code avec Terraform
+│   ├── main.tf                   # Script principal Terraform
+│   ├── variables.tf              # Variables pour Terraform
+│   └── outputs.tf                # Outputs Terraform
 │
-├── terraform/                  # Répertoire pour les fichiers Terraform
-│   ├── main.tf                 # Fichier principal de configuration Terraform
-│   ├── variables.tf            # Définition des variables Terraform
-│   ├── outputs.tf              # Définitions des outputs de Terraform
-│   └── provider.tf             # Configuration du provider (par exemple, AWS, Google Cloud)
-│
-├── scripts/                    # Scripts utiles pour l'automatisation ou la configuration
-│   └── setup.sh                # Par exemple, un script pour initialiser l'environnement
-│
-├── .gitignore                  # Fichier pour ignorer certains fichiers (ex. fichiers Terraform, Docker)
-├── README.md                   # Documentation du projet
-├── .dockerignore               # Fichier pour ignorer certains fichiers dans Docker
-└── src/                        # Code de l'application
+├── src/                          # Code source du projet
+├── .gitignore                    # Fichier .gitignore pour ignorer les fichiers générés
+└── README.md                     # Documentation du projet
 ```
 
 ---
@@ -2628,15 +2624,9 @@ Avantages de Terraform Cloud :
 - Workspaces multi-environnements
 
 ---
+
 <!-- _class: transition2 -->  
 
-Le monitoring<br>
-Prometheus
+THANK YOU!
 
---- 
-
-<div>         
- 
-![h:450px](./img/work-in-progress.jpeg)
-   
-</div> 
+![bg opacity:20% h:650 ](./img/devops-banner.png)
