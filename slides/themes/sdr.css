@@ -1,0 +1,45 @@
+/* @theme sdr */
+
+@import "jobs";
+
+:root em {
+  background-color: rgba(0,0,0,0);
+  color: rgb(29,107,209);
+  /* font-style: italic; */
+  font-weight: 500;
+  font-size: 1em;
+  /* font-family: inherit; */
+}
+
+:root blockquote {
+  border-top: none;
+  margin-top: 0.2em;
+  background-color: rgb(29, 107, 209, 0.05);
+  border-radius: 10px;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+blockquote .exemple {
+  font-size: larger;
+}
+
+blockquote strong {
+  color: inherit;
+}
+
+section.transition {
+  background-color: white;
+  
+  p {
+    color: rgb(29,107,209);
+  }
+}
+
+section.transition2 {
+  /* background-color: white; */
+
+  p {
+    /* color: rgb(29,107,209, 1) */
+  }
+}

@@ -4,5 +4,6 @@
     "./slides/themes/schema.css",
     "./slides/themes/structure.css",
     "./slides/themes/jobs.css",
+    "./slides/themes/sdr.css"
   ],
 }

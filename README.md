@@ -1,6 +1,6 @@
 # 4dop1dr-theorie
 
-Ce dépôt contient les supports de l'activité *4DOP1TDR* : **Introduction aux pratiques DevOps : théorie**.
+Ce dépôt contient les supports de l'activité *5DON4D* : **Introduction aux pratiques DevOps : théorie**.
 
 ## URL de publication
 

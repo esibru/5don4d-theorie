@@ -2,4 +2,4 @@
 
 SLIDES_URL=./slides
 
-npx @marp-team/marp-cli --server ${SLIDES_URL}
+npx @marp-team/marp-cli --server ${SLIDES_URL} --allow-local-files

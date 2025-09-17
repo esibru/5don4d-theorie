@@ -149,7 +149,6 @@
   letter-spacing: -0.5px;
 }
 
-
 :root li {
 
   font-family: 'San Francisco';
@@ -246,7 +245,7 @@ section.transition2 {
 
   /* font-family: serif, sans-serif, "Libre Baskerville", serif;
   font-family: 'Open Sans';
-  font-family: 'Segoe UI';  */
+  font-family: 'Segoe UI'; */
   
   font-family: 'San Francisco bold' !important;
 
