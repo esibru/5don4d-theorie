@@ -119,7 +119,7 @@ Les bases de données relationnelles, ont longtemps été le choix par défaut.
 
 <center>
 
-![](/slides/img/shared-db.jpg)
+![](./img/shared-db.jpg)
 
 </center>
 
@@ -135,6 +135,7 @@ Quelques différences entre les bases de données relationnelles, mais globaleme
 
 * Compétences des développeurs réutilisées dans beaucoup de projets.
 * Requêtes SQL et fonctionnement de base identique.
+* organisation des données adaptées à la majorité des requêtes,
 * Concept de transaction, trigger...
 
 ---
@@ -321,8 +322,8 @@ La création de petits cluster est un procédé peu coûteux, consistant à grou
 
 1. **11 juin 2009**, meetup informel à SanFrancisco organisé par Johan Oskarsson. Objetif : discuter de **base de données distribuées** & **non-relationnelles**.
    > ## Il fallait
-   > * un terme qui ferait un bon hashtag,
-   > * qui ne renvoyait pas trop de résultat sur google
+   > * un bon hashtag,
+   > * pas trop utilisé sur Google
    > * => *#NoSQL* proposé dans le chan irc #cassandra. Ne représente pas vraiment le sujet, mais est un bon hashtag 🤡) 
 
 ---
@@ -336,23 +337,35 @@ Sujets des talks :
  * CouchDB (document)
  * MongoDB (document)
 
-
 ---
 
-<!-- _class: transition -->
+# ~~Définition~~ Caractéristiques du NoSQL
 
-Introduction du NoSQL
-
----
-
-# Définition du NoSQL
-
-Il n'existe pas de définition, plutôt un ensemble de caractéristiques choisies à la convenance.
+Il n'existe pas de définition, plutôt un ensemble de caractéristiques.
 * Pas d'utilisation du SQL
+* XXI siècle
 * Non relationnel
 * Sans schéma ⚠️
 * Distribué
 * Autres propriétés que les propriétés ACID.
+
+---
+
+Les caractéristiques ne sont pas toujours rencontrées : 
+
+Ex : Modèle graphe sur un serveur unique.
+
+---
+
+<!-- _class: cite -->
+Au final, il est préférable de voir le NoSQL comme une mouvence. Stocker les données en choisissant le modèle de donnée et l'architecture la plus adaptée aux besoins. Les bdd NoSQL et les BDD relationnelles sont devenues des options.
+
+---
+
+2 raisons d'utiliser le NoSQL : 
+
+* besoins de performance (scalabilité)
+* améliorer la productivité du développement d'une applicaation
 
 ---
 
