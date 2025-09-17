@@ -242,7 +242,7 @@ Activités, tracking, gestion des données des réseaux sociaux (liens...) => la
 <div class="columns">
 <div>
 
-![](/slides/img/scaling-up.png)
+![](./img/scaling-up.png)
 Crédits : [geeks for geeks](https://www.geeksforgeeks.org/system-design/system-design-horizontal-and-vertical-scaling/)
 
 </div>
@@ -263,7 +263,7 @@ Crédits : [geeks for geeks](https://www.geeksforgeeks.org/system-design/system-
 <div class="columns">
 <div>
 
-![](/slides/img/scaling-out.png)
+![](./img/scaling-out.png)
 Crédits : [geeks for geeks](https://www.geeksforgeeks.org/system-design/system-design-horizontal-and-vertical-scaling/)
 
 </div>
@@ -385,7 +385,7 @@ Il n'existe pas de définition, plutôt un ensemble de caractéristiques choisie
 
 <center>
 
-![](/slides/img/work-in-progress.jpeg)
+![](./img/work-in-progress.jpeg)
 <center>
 
 ---
