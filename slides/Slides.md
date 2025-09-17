@@ -383,6 +383,13 @@ Il n'existe pas de définition, plutôt un ensemble de caractéristiques choisie
 
 ---
 
+<center>
+
+![](/slides/img/work-in-progress.jpeg)
+<center>
+
+---
+
 <!-- _class: biblio -->
 
 - **[NoSQL Distilled](https://www.oreilly.com/library/view/nosql-distilled-a/9780133036138/)** - A Brief Guide to the Emerging World of Polyglot Persistence. *Pramod J. Sadalage et Martin Fowler*
