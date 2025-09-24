@@ -6,11 +6,9 @@ keywords    : NoSQL, distribué, dénormalisation
 marp        : true
 paginate    : true
 theme       : sdr
-mermaid     : true
 footer      : "SDR - 5DON4D"
-
 --- 
-   
+
 <!-- _class: titlepage -->
 
 ![bg left:33%](./img/5don4d-wallpaper.jpg)
@@ -22,7 +20,7 @@ footer      : "SDR - 5DON4D"
 <div class="organization"  > Haute École Bruxelles-Brabant : Département des Sciences Informatiques    </div>
 
 ---
-     
+
 # Objectifs pédagogiques
 
 - Comprendre la mouvence **NoSQL**.
@@ -394,6 +392,201 @@ Au final, il est préférable de voir le NoSQL comme une mouvence. Stocker les d
 </div>
 </div>
 
+---
+<!-- _class: transition2 -->
+
+Modèles de données "agrégat"
+
+---
+
+Un *modèle de donnée* décrit comment intéragir avec les données.  
+
+* à ne pas confondre avec le modèle de stockage qui décrit comment la base de donnée stoque et manipule les donnée en interne.
+
+---
+
+Généralement, on fait le lien avec
+
+> ## Modélisation des données (Wikipedia)
+>
+> Dans la conception d'un système d'information, la *modélisation des données* est l'analyse et la conception de l'information contenue dans le système afin de représenter la structure de ces informations et de structurer le stockage et les traitements informatiques.
+>
+> Il s'agit essentiellement d'*identifier les entités logiques* et *les dépendances logiques* entre ces entités. La modélisation des données est une représentation abstraite, dans le sens où les valeurs des données individuelles observées sont ignorées au profit de la structure, des relations, des noms et des formats des données pertinentes, même si une liste de valeurs valides est souvent enregistrée. 
+
+Représentation qu'on peut faire à l'aide d'un diagramme ~~entité-relation~~ entité-association.
+
+---
+
+<!-- _class: cite -->
+
+Dans les slides qui suivent, nous utiliserons le terme *modèle de données* pour décrire la manière dont les base de données organisent les données (métamodèle).
+
+---
+<center>
+
+![h:500](./img/dm-client-order.png)
+
+*Figure 1.1.* Diagramme entité-association normalisé.
+
+</center>
+
+---
+
+## Le modèle de donnée relationnel
+
+* Ensemble de table (*relation*)
+* Chaque table possède des lignes ou enregistrement (*tuple*) qui représente des instances.
+* Les instances sont décritent au travers de colonnes (⚠️ 1 valeur par *cellule*).
+* Une colonne peut faire référence à un autre relation constituant une association entre elles-deux
+
+---
+
+## Modèles de données du NoSQL
+
+> Orientées agrégats
+> * Document
+> * Clé-valeur
+> * Famille de colonnes
+
+> Non orientées agrégats
+> * Graphe
+
+---
+
+# *Agrégats*
+
+Orientation différente du relationnel :
+
+- Modèle Relationnel : On prend l'information et on la divise en tuples (plats, non imbriqués)  
+- Orientation agrégat : On pense à comment manipuler les données. Souvent, on veut des **structures complexes** :
+  - Listes  
+  - Structures imbriquées  
+
+---
+
+> ## Définition
+> 
+> Terme qui vient de [Domain-Driven Design](https://fabiofumarola.github.io/nosql/readingMaterial/Evans03.pdf). Un *agrégat* est une collection d'objets liés que l'on souhaite traité comme *unité d'information*. En particulier, cela forme une unité pour 
+> * *la manipulation de donnée* et 
+> * *la gestion de la cohérence*.
+
+## Avantages
+
+* Un agrégat forme une unité naturelle pour la réplication et le sharding (dans un cluster).
+* Le développeur a l'habitude de manipuler des données imbriquées, des listes, tableaux...
+
+---
+
+<center>
+Diagramme entité-association normalisé.
+
+![h:500](./img/dm-client-order.png)
+
+
+</center>
+
+---
+
+<center>
+
+Échantillon de données
+
+![h:500](./img/data-sample-client-order.png)
+
+</center>
+
+---
+
+<center>
+
+Diagramme pensé en terme d'agrégat (solution 1)
+
+![h:500](./img/dm-agg1-client-order.png)
+
+</center>
+
+---
+
+```json 
+
+{ // in customers
+  "id": 1,
+  "name": "Martin",
+  "billingAddress": [{"city": "Chicago"}] ⚠️ Dénormalisation
+}
+
+{ // in orders
+  "id": 99,
+  "customerId": 1,
+  "orderItems": [{
+      "productId": 27,
+      "price": 32.45,
+      "productName": "NoSQL Distilled"
+    }
+  ],
+  "shippingAddress": [{"city":"Chicago"}], ⚠️
+  "orderPayment": [{
+      "ccinfo":"1000-1000-1000-1000",
+      "txnId":"abelif879rft",
+      "billingAddress":{"city":"Chicago"} ⚠️
+    }
+  ]
+}
+```
+
+---
+
+* Apparition de 3 copies d'une même adresse (*dénormalisation*). 
+   * 🗒️ En relationnel, il est nécessaire de prévenir la modification d'une ligne d'adresse.
+* Le lien entre un client et une commande ne fait partie d'aucun agrégat. → Il s'agit d'une association.
+
+* > Dénormalisation du nom du produit. Pourquoi est-ce acceptable/souhaitable en NoSQl ?
+  > * On souhaite minimiser le nombre accès aux agrégats.
+
+* Ce qui compte, ce n’est pas vraiment la façon exacte dont on dessine la frontière d’un agrégat, mais plutôt de réfléchir à la manière dont on va accéder aux données.
+
+---
+
+<center>
+
+Diagramme pensé en terme d'agrégats (solution 2)
+![h:500](./img/dm-agg2-client-order.png)
+</center>
+
+---
+
+```json
+{
+  "customer": {
+    "id": 1,
+    "name": "Martin",
+    "billingAddress": [
+      { "city": "Chicago" }
+    ],
+
+    "orders": [ {
+        "id": 99,
+        "customerId": 1,
+        "orderItems": [ {
+            "productId": 27,
+            "price": 32.45,
+            "productName": "NoSQL Distilled"
+          }
+        ],
+        "shippingAddress": [
+          { "city": "Chicago" }
+        ],
+        "orderPayment": [ {
+            "ccinfo": "1000-1000-1000-1000",
+            "txnId": "abelif879rft",
+            "billingAddress": { "city": "Chicago" }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
 ---
 
 <center>

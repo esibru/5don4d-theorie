@@ -20,6 +20,10 @@
   padding-bottom: 0.5em;
 }
 
+blockquote {
+  font-size: 0.8em;
+}
+
 blockquote .exemple {
   font-size: larger;
 }
