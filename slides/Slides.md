@@ -543,7 +543,7 @@ Diagramme pensé en terme d'agrégat (solution 1)
 * > Dénormalisation du nom du produit. Pourquoi est-ce acceptable/souhaitable en NoSQl ?
   > * On souhaite minimiser le nombre accès aux agrégats.
 
-* Ce qui compte, ce n’est pas vraiment la façon exacte dont on dessine la frontière d’un agrégat, mais plutôt de réfléchir à la manière dont on va accéder aux données.
+* ⚠️ Ce qui compte, ce n’est pas vraiment la façon exacte dont on dessine la frontière d’un agrégat, mais plutôt de réfléchir à la manière dont on va accéder aux données.
 
 ---
 
@@ -587,6 +587,149 @@ Diagramme pensé en terme d'agrégats (solution 2)
   }
 }
 ```
+---
+
+<!-- _class: cite -->
+
+Quelle agrégation est meilleure ?
+
+---
+
+Cela dépend de comment on souhaite manipuler les données
+* Accès client ↛  accès aux commandes ⇒ modèle 1
+   > Permet d'accéder individuellement aux commandes
+* Accès client → accès aux commandes ⇒ modèle 2
+
+Dépend de l'application, ce qui en fait un désavantage par rapport aux systèmes ignorant les agrégats.
+
+---
+
+## Non conscient des agrégats vs orienté agrégat
+
+- **Relational & Graph DBs** : Non conscient des agrégats
+  → pas de notion d’agrégat, juste des relations sans sémantique entre les données.
+- **NoSQL (Key-Value, Document, Column-Family)** : aggregate-oriented  
+  → l’agrégat indique l’unité de stockage et d’accès
+
+
+
+---
+
+## Pourquoi l’orientation agrégat ?
+
+- Facilite le **stockage distribué en cluster**  
+- L’agrégat indique quelles données doivent vivre ensemble sur le même noeud 
+- Simplifie la gestion de la cohérence locale
+
+⇒ Une bdd relationnelle ne peut pas utiliser des données d'agrégat pour optimiser le stockage et la distribution de données.
+
+---
+
+Ne pas connaître les agrégats est-il un handicap ?
+
+* Parmi les deux modèles d'agrégat précédement proposés.Comment réaliser un historique de la vente des produits ?
+
+---
+
+## Conséquence sur les transactions
+
+- **SGBDR** : transactions ACID multi-tables (sans limite)
+- **NoSQL agrégat-orienté** : atomicité **au niveau d’un seul agrégat**  
+  → si plusieurs agrégats : gestion à la charge de l’application  
+- **Graph & relationnel** : ACID complet possible
+
+> ## Transation ACID (Atomique, cohérent, isolé, durable)
+> 
+> Permet 
+> * de mettre à jour plusieurs table en une opération. 
+> * l'opération est réussie ou non-appliquée
+> * les opérations concurrente sont isolées et ne peuvent pas voir des mises à jours partielles.
+
+---
+
+<!-- _class: transition -->
+Modèles Clé-valeur & Document
+
+---
+
+## Base de données Clé-valeur
+
+- Données = { **clé** → **agrégat opaque** }  
+- Avantages :  
+  - Flexibilité totale sur le contenu  
+  - Performance simple (lookup par clé)  
+- Limite : pas de requêtes internes, pas de sous-récupération
+
+---
+
+## Base de données Document
+
+- Données = { **clé** → **document structuré** }  
+- Avantages :  
+  - Requêtes par *"clé"* internes  
+  - Récupération partielle possible  
+  - Index sur le contenu  
+- Limite : moins libre que clé-valeur (schéma implicite)
+
+---
+
+## Clé-valeur vs Document
+
+- **Key-Value** : lookup uniquement par clé  
+- **Document** : requêtes riches sur la structure  
+- La frontière est floue (Redis, Riak, etc.)
+
+---
+
+<!-- _class: transition -->
+Famille de colonne
+
+---
+
+## Origine : Google Bigtable
+
+- Modèle repris par **HBase** et **Cassandra**  
+- Stockage en **colonnes groupées (column families)**  
+- Différent des colonnes « relationnelles » classiques
+
+---
+
+## Structure
+
+- Map à **deux niveaux :**
+  - **Row** (identifiant → agrégat)  
+  - **Columns** regroupées en **familles**  
+- Accès possible : tout le row ou colonnes spécifiques
+
+---
+
+<center>
+
+![h:500](./img/column-familly.png)
+
+</center>
+
+---
+
+<!-- _class: transition -->
+Comparaison des 3 modèles
+
+---
+
+## Comparaison des 3 modèles
+
+- **Key-Value** : agrégat opaque, lookup par clé uniquement  
+- **Document** : agrégat transparent, requêtes internes possibles  
+- **Column-Family** : agrégat en 2 niveaux (row + familles de colonnes)
+
+---
+
+## Points communs
+
+- Agrégat = unité d’accès et de mise à jour  
+- Optimisé pour le **cluster**
+- Donne un compromis entre **structure** et **flexibilité**
+
 ---
 
 <center>
