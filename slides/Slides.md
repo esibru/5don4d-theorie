@@ -487,13 +487,13 @@ Diagramme entité-association normalisé.
 
 ---
 
-<!-- <center>
+<center>
 
 Échantillon de données
 
 ![h:500](./img/data-sample-client-order.png)
 
-</center> -->
+</center>
 
 ---
 
