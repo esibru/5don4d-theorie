@@ -669,7 +669,7 @@ Modèles Clé-valeur & Document
   - Requêtes par *"clé"* internes  
   - Récupération partielle possible  
   - Index sur le contenu  
-- Limite : moins libre que clé-valeur (schéma implicite)
+- Limite : moins libre que clé-valeur
 
 ---
 
@@ -689,7 +689,7 @@ Famille de colonne
 ## Origine : Google Bigtable
 
 - Modèle repris par **HBase** et **Cassandra**  
-- Stockage en **colonnes groupées (column families)**  
+- Stockage en **colonnes groupées (famille de colonnes)**  
 - Différent des colonnes « relationnelles » classiques
 
 ---
