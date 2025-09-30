@@ -61,7 +61,7 @@ L'**évaluation** repose sur
 ---
 <!-- _class: transition2 -->
 
-Introduction au NoSQL
+Cours 01 : Introduction au NoSQL
 
 ---
 
@@ -395,7 +395,7 @@ Au final, il est préférable de voir le NoSQL comme une mouvence. Stocker les d
 ---
 <!-- _class: transition2 -->
 
-Modèles de données "agrégat"
+Cours 02 : Modèles de données "agrégat"
 
 ---
 
@@ -732,12 +732,134 @@ Comparaison des 3 modèles
 
 ---
 
+<!-- _class: transition2 -->
+
+Cours 03 : Plus de détail sur les modèles de données
+
+---
+
+# Rappel
+
+2 cas :
+
+1. Accès client → accès aux commandes
+1. Accès individuels aux commandes
+
+---
+
+Récupération des détails du client dans le cas n°2 :
+
+1. on récupère l'enregistrement lié à la commande,
+2. on lit l'ID du client,
+3. on récupère l'agrégat du client.
+
+> ⚠️ Attention, la base de donnée n'aura pas connaissance de ce lien.
+>    * Conséquences ?
+>
+> Certaines bdd mettent en place des méchanismes pour optimiser : index (MongoDB), metadonnée (Riak).
+---
+
+### Modèlisation alternative (Client intégré à l'ordre)
+
+``` json
+{
+  "_id": 456,
+  "customer": { "id": 123, "name": "Alice", "email": "alice@example.com" },
+  "total": 25.0
+  ...
+}
+```
+
+---
+
+| Modèle                  | La base "connait" la relation ? | Requêtes croisées possibles ? | Risque d’incohérence |
+|--------------------------|----------------------------------|--------------------------------|-----------------------|
+| **SQL**                 | ✅ Oui (clé étrangère)           | ✅ Jointures puissantes         | Faible (contrainte FK et ACID) |
+| **Clé-valeur pur**      | ❌ Non (juste ID stocké)        | ❌ Non                          | Moyen (c’est à l’app de gérer) |
+| **Document (cas n°1 - par référence)** | ⚠️ Un peu (via index)          | ✅ Oui (via index)              | Moyen (pas de FK stricte) |
+| **Document (embedding)** | ❌ Non (pas de lien)            | ❌ Non  (mais pas besoin)    | Élevé (duplication) |
+| **Clé-valeur avec liens (Riak)** | ✅ Oui (via metadata)        | ⚠️ Limité (suivi de lien interne au sgbd)        | Moyen (pas de validation à l'écriture)|
+
+---
+
+<!-- _class: transition -->
+
+Et avec le modèle graphe ?
+
+---
+
+<center>
+
+![h:550](/slides/img/graph-structure-example.png)
+</center>
+
+---
+
+> ## Graphe de connaissance ([wikipedia](https://en.wikipedia.org/wiki/Knowledge_graph))
+> In knowledge representation and reasoning, a *knowledge graph* is a knowledge base that uses a graph-structured data model or topology to represent and operate on data. Knowledge graphs are often used to store interlinked descriptions of entities – objects, events, situations or abstract concepts – while also encoding the free-form semantics or relationships underlying these entities.
+
+> ## Traduction & simplification
+> Un graphe de connaissances est une base de données qui utilise un graphe (sommets et arêtes) pour représenter l’information.
+Il permet de stocker des descriptions reliées entre elles concernant des entités (par exemple : objets, personnes, événements, situations ou idées abstraites) et de représenter aussi les relations qui existent entre ces entités.
+
+---
+
+<!-- _class: cite -->
+
+Trouver les livres de la catégorie bases de données écrits par un auteur apprécié par un ami.
+
+---
+
+| Modèle                  | La base "connait" la relation ? | Requêtes croisées possibles ? | Risque d’incohérence |
+|--------------------------|----------------------------------|--------------------------------|-----------------------|
+| **Graphe (Neo4j)** | ✅ Oui (objet de 1ère classe)        | ✅✅ Oui        | Faible ([first-class citizen](https://neo4j.com/news/5-factors-driving-graph-database-explosion/))|
+
+---
+
+# Dans un modèle relationnel
+
+On peut parcourir les clés étrangères à l'aide des jointures, mais c'est vite couteux, difficile à écrire, lire...
+
+## Exemple :
+``` sql
+SELECT DISTINCT vArrivee.nom, vArrivee.pays
+FROM ville vDepart
+JOIN troncon t1 ON vDepart.idville = t1.villeDepart
+JOIN troncon t2 ON t1.villeArrivee = t2.villeDepart
+JOIN troncon t3 ON t2.villeArrivee = t3.villeDepart
+JOIN ville vArrivee ON t3.villeArrivee = vArrivee.idville
+WHERE vDepart.nom = 'Bruxelles';
+```
+
+---
+
+Dans une base de données graphe, la plupart des requêtes servent surtout à explorer les relations entre les données.
+
+1. Point de départ : recherche par un attribut indexé
+1. suivi des arêtes
+
+---
+
+# Modèle graphe vs modèles agrégats
+* Nature différente des agrégats (voir opposé)
+* Sur un serveur unique (~~distribué dans un cluster~~)
+* ACID complet
+* Liens avec les autres sgbd NoSQL : 
+  * Augmentation d'intérêt conjointement
+  * rejet du modèle relationnel.
+
+---
+
 <center>
 
 ![](./img/work-in-progress.jpeg)
 <center>
 
+
 ---
+
+
+
 
 <!-- _class: biblio -->
 
@@ -749,9 +871,3 @@ Comparaison des 3 modèles
 <!-- _class: transition2 -->  
 
 Merci !
-
----
-
-# ACID ([Wikipédia](https://fr.wikipedia.org/wiki/Propri%C3%A9t%C3%A9s_ACID))
-
-Les propriétés *ACID* (atomicité, cohérence, isolation et durabilité) sont un ensemble de propriétés qui garantissent qu'une transaction informatique est exécutée de façon fiable. 
