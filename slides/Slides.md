@@ -1054,6 +1054,23 @@ Ex: 📖 [Solution MongoDB](https://www.mongodb.com/docs/manual/core/materialize
 
 ---
 
+<!-- _class: transition -->
+Modélisation pour les accès données
+
+---
+
+## Réflexion
+
+* Comment modéliser la bd commandes/client.
+  * pour pouvoir faire des requêtes individuelles sur les commandes.
+  * pouvoir récupérer efficacement les commandes réalisées par un client.
+
+* Dans le cas développé, comment peut-on optimiser la requête : quelles commandes contiennent un produit donné.
+
+-> la manière de créer les agrégats dépend des lectures que nous souhaitons faire.
+
+---
+
 <center>
 
 ![](./img/work-in-progress.jpeg)
