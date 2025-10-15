@@ -1253,7 +1253,7 @@ Quelle est la différence entre un noeud, un cluster et un datacenter ?
 ---
 
 ## Réplication 🤝 partitionnement
-> Les deux techniques sont souvent **combinées**.
+> Les deux techniques sont souvent **combinées** ↦ compromis difficile pour réaliser, configurer, utiliser un système distribué.
 
 <center>
 
@@ -1317,12 +1317,6 @@ Quelle est la différence entre un noeud, un cluster et un datacenter ?
 
 ---
 
-<!-- _class: transition2 -->
-
-Distribution des données : Réplication
-
----
-
 <!-- _class: cite -->
 
 La réplication consiste à conserver une copie des mêmes données sur plusieurs machines connectées entre elles via un réseau.
@@ -1337,8 +1331,11 @@ La réplication consiste à conserver une copie des mêmes données sur plusieur
 
 ---
 
-* Le jeu de donnée peut tenir sur un seul noeud (pas de partition).
-* l'enjeu réside dans le changement (pas de changement -> on copie et c'est fini).
+# Approches
+
+> **Note**
+> - Le jeu de donnée peut tenir sur un seul noeud (pas de partition).
+> - l'enjeu réside dans le changement (pas de changement -> on copie et c'est fini).
 * 3 approches : 
    * Réplication à *leader unique*
    * Réplication à *multi-leader*
@@ -1346,7 +1343,140 @@ La réplication consiste à conserver une copie des mêmes données sur plusieur
 
 ---
 
+# Compromis à considérer
 
+La réplication d’une base de données soulève de nombreux **choix techniques** :
+
+- **Réplication synchrone** ou **asynchrone** ?  
+- Comment **gérer les réplicas défaillants** ?  
+- Quelles **garanties de cohérence** offrir aux utilisateurs ?
+
+> Ces options varient selon les SGBD, mais les **principes généraux** sont similaires dans la plupart des systèmes.
+
+---
+
+# Faire du neuf avec du vieux
+
+> La réplication des bases de données est étudiée depuis les **années 1970** 🧠
+
+- Les **principes fondamentaux** ont peu changé, 
+  car les **contraintes du réseau** (latence, pannes, déconnexion)  
+  restent les mêmes aujourd’hui.
+
+
+Ce qui a évolué :  
+- L'utilisation plus générale de systèmes distribués par les développeurs applicatifs.
+  → Préconception, vulgarisation (ex: cohérence éventuelle)...
+
+⚠️Considération pour le développeur (ex: [MongoDB](https://www.mongodb.com/docs/development/))
+
+---
+
+# Comprendre la cohérence éventuelle
+
+> Beaucoup de malentendus entourent la **cohérence éventuelle**.
+
+Dans ce chapitre, nous aborderons :
+- le **retard de réplication** (*replication lag*),  
+- les garanties de lecture :
+  - **read-your-writes** (lire ce qu’on vient d’écrire),  
+  - **monotonic reads** (lectures toujours cohérentes dans le temps).
+- ...
+
+**Objectif** : comprendre les **conséquences pratiques**  des choix de réplication dans un système distribué.
+
+---
+
+# Réplica
+
+Chaque noeud qui enregistre une copie de la base de donnée est appelée *Réplica*.
+
+🧩 Problème :  
+> Comment s’assurer que toutes les répliques contiennent les **mêmes données** ?
+
+Chaque **écriture** doit être appliquée sur **toutes les répliques**.
+
+La méthode la plus courante : **leader-based replication** (aussi appelée **master–slave** ou **active/passive**).
+
+---
+
+<!-- _class: transition3 -->
+
+Leader & followers
+
+---
+# Principe général
+
+### Le leader
+- Une réplique est désignée comme **leader** (aussi : *master* ou *primary*).  
+- Tous les **écritures** passent **uniquement par lui**.  
+- Le leader **enregistre** d’abord la donnée localement.
+
+### Les followers
+- Les autres répliques sont des **followers** (*read replicas*, *slaves*, *secondaries*).  
+- Le leader leur **envoie un flux de changements** (replication log / change stream).  
+- Chaque follower **applique les écritures dans le même ordre** que le leader.
+
+> Ex. [MongoDB : Primary & secondary](https://www.mongodb.com/docs/manual/replication/)
+---
+
+# Lecture et écriture
+
+- **Écritures** : uniquement sur le **leader**  
+- **Lectures** : possibles sur **le leader ou les followers**
+
+<center>
+
+![h:300](./img/leader-follower.png)
+</center>
+
+---
+
+<!-- _class: transition3 -->
+
+Réplication synchrone vs asynchrone
+
+---
+
+# Réplication : synchrone ou asynchrone ?
+
+Un aspect important d’un système répliqué :  
+> **La manière dont la réplication s’effectue.**
+
+Deux approches possibles :
+- **Réplication synchrone**
+- **Réplication asynchrone**
+
+> **Info**
+> - *Paramétrable* dans certaines bases relationnelles ; 
+> - *Figé dans le code* dans d’autres.
+
+---
+
+
+# Fonctionnement général
+
+1. Le client envoie une requête d’**écriture** au **leader**.  
+1. Le leader enregistre la modification localement.  
+1. Le leader **transmet le changement aux followers**.  
+1. Le leader **confirme le succès** au client.
+
+> La différence entre *synchrone* et *asynchrone* : faut-il attendre une réponse du followers ?
+
+---
+
+<center>
+
+![h:400](./img/replica-synchrone-asynchrone.png)
+</center>
+
+* Follower 1 - réplication synchrone. Leader attend réception du ok → notification du client.
+* Follower 2 - Réplication asynchrone. Leader suppose `:writeok:` sans attendre.
+
+---
+
+<!-- _class: cite -->
+Avantages & inconvénients au prochain cours
 
 ---
 
