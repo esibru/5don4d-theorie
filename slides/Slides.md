@@ -40,7 +40,7 @@ footer      : "SDR - 5DON4D"
 --- 
 
 L'**évaluation** repose sur 
-* la réalisation d’un système **polyglotte** illustrant la gestion de données diverses dans une application moderne.
+* la réalisation d'un système **polyglotte** illustrant la gestion de données diverses dans une application moderne.
 * un examen théorique.
 
 ---
@@ -543,7 +543,7 @@ Diagramme pensé en terme d'agrégat (solution 1)
 * > Dénormalisation du nom du produit. Pourquoi est-ce acceptable/souhaitable en NoSQl ?
   > * On souhaite minimiser le nombre accès aux agrégats.
 
-* ⚠️ Ce qui compte, ce n’est pas vraiment la façon exacte dont on dessine la frontière d’un agrégat, mais plutôt de réfléchir à la manière dont on va accéder aux données.
+* ⚠️ Ce qui compte, ce n'est pas vraiment la façon exacte dont on dessine la frontière d'un agrégat, mais plutôt de réfléchir à la manière dont on va accéder aux données.
 
 ---
 
@@ -607,18 +607,18 @@ Dépend de l'application, ce qui en fait un désavantage par rapport aux systèm
 ## Non conscient des agrégats vs orienté agrégat
 
 - **Relational & Graph DBs** : Non conscient des agrégats
-  → pas de notion d’agrégat, juste des relations sans sémantique entre les données.
+  → pas de notion d'agrégat, juste des relations sans sémantique entre les données.
 - **NoSQL (Key-Value, Document, Column-Family)** : aggregate-oriented  
-  → l’agrégat indique l’unité de stockage et d’accès
+  → l'agrégat indique l'unité de stockage et d'accès
 
 
 
 ---
 
-## Pourquoi l’orientation agrégat ?
+## Pourquoi l'orientation agrégat ?
 
 - Facilite le **stockage distribué en cluster**  
-- L’agrégat indique quelles données doivent vivre ensemble sur le même noeud 
+- L'agrégat indique quelles données doivent vivre ensemble sur le même noeud 
 - Simplifie la gestion de la cohérence locale
 
 ⇒ Une bdd relationnelle ne peut pas utiliser des données d'agrégat pour optimiser le stockage et la distribution de données.
@@ -634,8 +634,8 @@ Ne pas connaître les agrégats est-il un handicap ?
 ## Conséquence sur les transactions
 
 - **SGBDR** : transactions ACID multi-tables (sans limite)
-- **NoSQL agrégat-orienté** : atomicité **au niveau d’un seul agrégat**  
-  → si plusieurs agrégats : gestion à la charge de l’application  
+- **NoSQL agrégat-orienté** : atomicité **au niveau d'un seul agrégat**  
+  → si plusieurs agrégats : gestion à la charge de l'application  
 - **Graph & relationnel** : ACID complet possible
 
 > ## Transation ACID (Atomique, cohérent, isolé, durable)
@@ -726,7 +726,7 @@ Comparaison des 3 modèles
 
 ## Points communs
 
-- Agrégat = unité d’accès et de mise à jour  
+- Agrégat = unité d'accès et de mise à jour  
 - Optimisé pour le **cluster**
 - Donne un compromis entre **structure** et **flexibilité**
 
@@ -777,10 +777,10 @@ Récupération des détails du client dans le cas n°2 :
 
 ---
 
-| Modèle                  | La base "connait" la relation ? | Requêtes croisées possibles ? | Risque d’incohérence |
+| Modèle                  | La base "connait" la relation ? | Requêtes croisées possibles ? | Risque d'incohérence |
 |--------------------------|----------------------------------|--------------------------------|-----------------------|
 | **SQL**                 | ✅ Oui (clé étrangère)           | ✅ Jointures puissantes         | Faible (contrainte FK et ACID) |
-| **Clé-valeur pur**      | ❌ Non (juste ID stocké)        | ❌ Non                          | Moyen (c’est à l’app de gérer) |
+| **Clé-valeur pur**      | ❌ Non (juste ID stocké)        | ❌ Non                          | Moyen (c'est à l'app de gérer) |
 | **Document (cas n°1 - par référence)** | ⚠️ Un peu (via index)          | ✅ Oui (via index)              | Moyen (pas de FK stricte) |
 | **Document (embedding)** | ❌ Non (pas de lien)            | ❌ Non  (mais pas besoin)    | Élevé (duplication) |
 | **Clé-valeur avec liens (Riak)** | ✅ Oui (via metadata)        | ⚠️ Limité (suivi de lien interne au sgbd)        | Moyen (pas de validation à l'écriture)|
@@ -804,7 +804,7 @@ Et avec le modèle graphe ?
 > In knowledge representation and reasoning, a *knowledge graph* is a knowledge base that uses a graph-structured data model or topology to represent and operate on data. Knowledge graphs are often used to store interlinked descriptions of entities – objects, events, situations or abstract concepts – while also encoding the free-form semantics or relationships underlying these entities.
 
 > ## Traduction & simplification
-> Un graphe de connaissances est une base de données qui utilise un graphe (sommets et arêtes) pour représenter l’information.
+> Un graphe de connaissances est une base de données qui utilise un graphe (sommets et arêtes) pour représenter l'information.
 Il permet de stocker des descriptions reliées entre elles concernant des entités (par exemple : objets, personnes, événements, situations ou idées abstraites) et de représenter aussi les relations qui existent entre ces entités.
 
 ---
@@ -815,7 +815,7 @@ Trouver les livres de la catégorie bases de données écrits par un auteur appr
 
 ---
 
-| Modèle                  | La base "connait" la relation ? | Requêtes croisées possibles ? | Risque d’incohérence |
+| Modèle                  | La base "connait" la relation ? | Requêtes croisées possibles ? | Risque d'incohérence |
 |--------------------------|----------------------------------|--------------------------------|-----------------------|
 | **Graphe (Neo4j)** | ✅ Oui (objet de 1ère classe)        | ✅✅ Oui        | Faible ([first-class citizen](https://neo4j.com/news/5-factors-driving-graph-database-explosion/))|
 
@@ -879,8 +879,8 @@ Les bases de données NoSQL sont « sans schéma ».
 ## NoSQL : un stockage plus flexible
 
 - Pas de schéma imposé  
-- Chaque type de NoSQL permet d’ajouter librement :
-  - **Clé-valeur** : n’importe quelle donnée associée à une clé  
+- Chaque type de NoSQL permet d'ajouter librement :
+  - **Clé-valeur** : n'importe quelle donnée associée à une clé  
   - **Document** : structure libre dans chaque document  
   - **Famille de colonne** : données dans les colonnes au choix  
   - **Graphe** : nouvelles arêtes et propriétés ajoutées librement 
@@ -890,7 +890,7 @@ Les bases de données NoSQL sont « sans schéma ».
 ## Avantages du *sans schéma*
 
 * Plus grande liberté et flexibilité,
-* Pas besoin de tout prévoir à l’avance,  
+* Pas besoin de tout prévoir à l'avance,  
 * Adaptation facile au projet en cours,
 * Suppression de données non utilisées (sans effets de bord),
 * Ajout de données sans faire des "trous".
@@ -929,12 +929,12 @@ Les bases de données NoSQL sont « sans schéma ».
    > ⚠️ Attention, aussi valide dans le modèle relationnelle (column1, column2...).
 * risques ☢️ : incohérences, incompatibilités
 * Approches possibles :
-  * Centraliser l’accès aux données : via une seule appli + API (service web)
+  * Centraliser l'accès aux données : via une seule appli + API (service web)
   * Délimiter clairement les zones accessibles par chaque appli 🤮.
 
 ---
 
-## Schémas relationnels : plus flexibles qu’on ne pense
+## Schémas relationnels : plus flexibles qu'on ne pense
 
 * SQL permet de modifier un schéma à tout moment
 * Des colonnes peuvent être ajoutées à la volée  
@@ -946,9 +946,9 @@ Les bases de données NoSQL sont « sans schéma ».
 
 - Le *« sans schéma »*
   * pour 👍 : Flexibilité, adaptation rapide, gestion des données variées
-  * contre 👎 difficultés d’optimisation et de validation
+  * contre 👎 difficultés d'optimisation et de validation
 * > ## En réalité
-  > * **le schéma n’a pas disparu**, bdd ↦ app
+  > * **le schéma n'a pas disparu**, bdd ↦ app
   > * La flexibilité s'arrête à l'horizon des agrégats.
 
 ---
@@ -997,7 +997,7 @@ Vues et Vues matérialisées
 | **Fraîcheur des données** | Toujours à jour | Peut être périmée |
 | **Performance lecture** | Plus lente | Très rapide |
 | **Mémoire utilisée** | Faible | Plus élevée |
-| **Cas d’usage** | Données fraîches | Requêtes lourdes et répétées + léger retard toléré |
+| **Cas d'usage** | Données fraîches | Requêtes lourdes et répétées + léger retard toléré |
 
 ---
 
@@ -1031,15 +1031,15 @@ Ex: 📖 [Solution MongoDB](https://www.mongodb.com/docs/manual/core/materialize
 
 * Construire la vue en dehors de la BD et la réinjecter  
 * Laisser la base calculer et maintenir la vue selon une configruation (trigger)
-* Usage d’**incremental map-reduce** (mise à jour incrémentale)  
+* Usage d'**incremental map-reduce** (mise à jour incrémentale)  
 
 ---
 
 ## Dénormalisation interne
 
 - Exemple : document *commande* contenant un résumé (*résumé de commande*)  
-   - Évite de parcourir tout l’objet pour une requête simple  
-- Dans les bases **column-family** : vues matérialisées gérées dans d’autres familles de colonnes  
+   - Évite de parcourir tout l'objet pour une requête simple  
+- Dans les bases **column-family** : vues matérialisées gérées dans d'autres familles de colonnes  
 - Mise à jour possible dans la **même transaction atomique**
 
 ---
@@ -1049,7 +1049,7 @@ Ex: 📖 [Solution MongoDB](https://www.mongodb.com/docs/manual/core/materialize
 - Les **agrégats** facilitent certains accès, mais compliquent les requêtes globales  
 - Les **vues matérialisées** apportent une solution :  
   - Rapidité en lecture  
-  - Flexibilité d’accès  
+  - Flexibilité d'accès  
   - Mais nécessitent une gestion des mises à jour (eager ou batch)
 
 ---
@@ -1071,6 +1071,285 @@ Modélisation pour les accès données
 
 ---
 
+<!-- _class: transition -->
+
+ III - Distribution des données
+
+---
+
+<!-- _class: transition2 -->
+
+1 - Introduction
+
+---
+
+<center>
+
+![h:500](./img/distribution-road.png)
+
+</center>
+
+---
+
+<!-- _class: transition3 -->
+
+Départ : Aucune distribution
+
+---
+
+> « Plus simple, la première des options de distribution est celle que nous recommandons le plus souvent : **aucune distribution**. »
+
+- La base de données tourne sur **une seule machine**  
+  → gère **toutes les lectures et écritures**  
+- Cette approche **évite toute complexité** :
+  - plus simple à administrer
+  - plus facile à raisonner pour les développeurs
+- Si possible : **préférer toujours un modèle mono-serveur**.
+
+---
+
+# Quand le mono-serveur reste pertinent
+
+Même si de nombreuses bases NoSQL sont conçues pour les **clusters** :
+
+- Le **modèle de données** du NoSQL peut mieux convenir à l’application,  
+  **même sur un seul serveur**.
+- Exemple :  
+  - **Bases de données graphe** → fonctionnement optimal sur un seul nœud  
+  - **Document stores** ou **key-value stores** → efficaces pour des agrégats simples
+
+> ⚠️ Si l’on peut éviter la distribution, **on choisira toujours une approche mono-serveur**.
+
+---
+
+<!-- _class: transition3 -->
+
+On the road
+
+---
+
+<!-- _class: cite -->
+
+Que se passe-t-il lorsque **plusieurs machines** participent au stockage et à la récupération des données ?
+
+---
+
+# Pourquoi distribuer les données ?
+
+*  **Scalabilité**  
+  Répartir la charge (lecture, écriture, volume) sur plusieurs machines.
+
+* **Tolérance aux pannes / Haute disponibilité**  
+  Le système continue de fonctionner même si une machine (ou un datacenter) tombe en panne.
+
+* **Latence**  
+  Servir les utilisateurs depuis des serveurs **géographiquement proches** pour réduire les délais réseau.
+
+---
+
+<!-- _class: cite -->
+
+Quelle est la différence entre un noeud, un cluster et un datacenter ?
+
+---
+
+# Cas Cassandra
+
+<center>
+
+![h:400](./img/arch_cassandra.png)
+</center>
+
+[Cluster, Datacenters, Racks and Nodes in Cassandra (Baeldung)](https://www.baeldung.com/cassandra-cluster-datacenters-racks-nodes)
+
+---
+
+
+# Monter en charge : vertical vs horizontal
+
+##  Scalabilité verticale (scale up)
+- Acheter une **machine plus puissante** : plus de CPU, RAM, disques.
+- Simple à mettre en place, mais :
+  - coût croît **plus vite que linéairement**
+  - bottlenecks (réseau...) 
+  - limites physiques (ex: nonuniform memory access) et géographiques
+
+## Scalabilité horizontale (scale out)
+- Ajouter **plusieurs machines** (noeuds) travaillant de manière distribuée.  
+- Nécessite des mécanismes de coordination, mais plus flexible et résilient.
+---
+
+# Architectures possibles
+
+---
+
+### 1️⃣ Mémoire partagée (shared-memory)
+> Une seule machine avec de multiples processeurs et mémoire commune (OS unique).  
+✅ Simple  
+❌ Coût élevé, tolérance de panne limitée.
+
+### 2️⃣ Disque partagé (shared-disk)
+> Plusieurs machines partagent les mêmes disques via un réseau rapide.  
+✅ Utilisé en entrepôts de données.  
+❌ Problèmes de **verrouillage** et de **concurrence**.
+
+### 3️⃣ Sans partage (shared-nothing)
+> Chaque nœud a ses **propres CPU, RAM, disque**.  
+✅ Très populaire, peu coûteux, extensible  
+❌ Complexité accrue pour les développeurs.
+
+---
+
+# Entrepôt de données (data warehouse)
+
+> [Wikipedia](https://fr.wikipedia.org/wiki/Entrep%C3%B4t_de_donn%C3%A9es)
+> Un *entrepôt de données (data warehouse)* est une **base de données** regroupant une partie ou l'**ensemble des données fonctionnelles d'une entreprise**. Il entre dans le cadre de l'**informatique décisionnelle** ; son but est de fournir un ensemble de données servant de **référence unique**, utilisée pour la **prise de décisions** dans l'entreprise par le biais de **statistiques et de rapports** réalisés via des outils de reporting. 
+>
+> D'un point de vue technique, il sert surtout à 'délester' les bases de données opérationnelles des requêtes pouvant nuire à leurs performances.
+
+---
+
+<div class="columns">
+<div>
+
+![h:400](./img/data_warehouse_overview.JPG)
+[Wikipedia](https://fr.wikipedia.org/wiki/Entrep%C3%B4t_de_donn%C3%A9es#/media/Fichier:Data_warehouse_overview.JPG)
+
+</div>
+<div>
+
+> [Wikipedia](https://fr.wikipedia.org/wiki/Entrep%C3%B4t_de_donn%C3%A9es)
+> - extraction des données de production, transformations éventuelles et chargement de l'entrepôt (c'est l'ETL ou Extract, Transform and Load ou encore datapumping).
+> - on peut voir l'entrepôt de données comme une **architecture décisionnelle** capable à la fois de gérer l'**hétérogénéité** et le **changement** et dont l'enjeu est de **transformer** les données en **informations directement exploitables** par les utilisateurs du métier concerné. 
+</div>
+</div>
+
+---
+
+# Modèle "Shared-nothing" ou horizontal scaling ou scaling out
+
+## Avantages
+- Pas besoin de matériel spécialisé
+- Possibilité de répartir les données **dans plusieurs régions**  
+- Réduction de la latence et meilleure résilience  
+- Accessible même aux **petites entreprises** via le cloud
+
+## Mais attention
+> Plus de puissance ⟹ aussi plus de complexité à gérer (cohérence, pannes, synchronisation…)
+
+---
+
+# Réplication et Partitionnement
+
+## Réplication
+
+> Copier les **mêmes données** sur plusieurs nœuds (potentiellement dans différents lieux).  
+>   * Assure la **redondance** et la **résilience** (des noeuds peuvent être indisponibles).
+>   * Peut aider à améliorer les performances.
+
+## Partitionnement (sharding)
+> Découper une grosse base de donnée en sous-ensembles (appelés *partition* ou *shard*) ; répartis sur plusieurs nœuds.
+
+---
+
+## Réplication 🤝 partitionnement
+> Les deux techniques sont souvent **combinées**.
+
+<center>
+
+![h:400](./img/sharding-replication.png)
+
+</center>
+
+---
+
+# Théorème CAP
+
+<div class="columns">
+<div>
+
+<center>
+
+![h:400](./img/CAP_Theorem_Euler_Diagram.png)
+
+</center>
+
+</div>
+<div>
+
+- Cohérence
+- disponibilité
+- tolérance aux partition
+* *choisissez-en deux !*
+
+</div>
+</div>
+
+---
+
+> [Wikipedia](https://en.wikipedia.org/wiki/CAP_theorem)
+> * **Disponibilité** - Chaque requête reçue par un noeud non défaillant du système doit aboutir à une réponse. (définition formulée dans le théorème CAP, par Gilbert et Lynch.)
+>   |Théorème CAP||architecture logicielle|
+>   |---|---|---|
+>   |Disponibilité (pas de délais)|≠|haute disponibilité ou faible latence|
+> * **Cohérence (~~consistance~~)** - Chaque lecture reçoit la donnée la plus récente écrite, ou une erreur.
+>   |Théorème CAP||Transaction ACID|
+>   |---|---|---|
+>   |Cohérence de réplication ou linéarisable|≠|Cohérence logique|
+> * **Tolérance aux partitions** - Le système continue de fonctionner même si un nombre arbitraire de messages est perdu (ou retardé) par le réseau entre les noeuds.
+
+---
+
+<center>
+
+![h:450](./img/cap-Julia_Evans.png)
+
+</center>
+
+> <span class="ref">📖 [CAP - Julia Evans]https://jvns.ca/blog/2016/11/19/a-critique-of-the-cap-theorem/</span>
+> <Span class="ref">📖 [Martin Kleppmann - A Critique of the CAP Theorem](https://arxiv.org/abs/1509.05393)</span>
+
+---
+
+<!-- _class: transition2 -->
+
+2 - Réplication
+
+---
+
+<!-- _class: transition2 -->
+
+Distribution des données : Réplication
+
+---
+
+<!-- _class: cite -->
+
+La réplication consiste à conserver une copie des mêmes données sur plusieurs machines connectées entre elles via un réseau.
+
+---
+
+# Objectifs
+
+* Garder les données proche géographiquement (↘ latence).
+* Permettre au système de continuer à fonctionner même si certains de ses noeuds tombent en panne. (↗ la disponibilité).
+* Augmenter horizontallement (scale-out) le nombre de machines qui répondent aux requêtes de lectures (↗ capacité traitement). 
+
+---
+
+* Le jeu de donnée peut tenir sur un seul noeud (pas de partition).
+* l'enjeu réside dans le changement (pas de changement -> on copie et c'est fini).
+* 3 approches : 
+   * Réplication à *leader unique*
+   * Réplication à *multi-leader*
+   * Réplication *sans leader (P2P)*
+
+---
+
+
+
+---
+
 <center>
 
 ![](./img/work-in-progress.jpeg)
@@ -1080,12 +1359,11 @@ Modélisation pour les accès données
 ---
 
 
-
-
 <!-- _class: biblio -->
 
-- **[NoSQL Distilled](https://www.oreilly.com/library/view/nosql-distilled-a/9780133036138/)** - A Brief Guide to the Emerging World of Polyglot Persistence. *Pramod J. Sadalage et Martin Fowler*
-- **[A critique of the CAP theorem](https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html)** *Martin Kleppmann*
+- **Kleppmann, M. (2015).** A Critique of the CAP Theorem. [🔗](https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html)
+- **Kleppmann, M. (2017).** Designing data-intensive applications.
+- **Sadalage, P. J., & Fowler, M. (2013).** NoSQL distilled: a brief guide to the emerging world of polyglot persistence. Pearson Education.
 
 ---
 
