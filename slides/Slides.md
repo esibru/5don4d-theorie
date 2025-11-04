@@ -2137,7 +2137,7 @@ Zone dangereuse à éviter si possible.
 
 ---
 
-## Deux leaders modifient **la même donnée** en parallèle
+### Deux leaders modifient **la même donnée** en parallèle
 
 <center>
 
@@ -2146,12 +2146,12 @@ Zone dangereuse à éviter si possible.
 
 ---
 
-# Détection de conflit **Synchrone** & **Asynchrone**.
+## Détection de conflit **Synchrone** & **Asynchrone**
 
 <div class="columns">
 <div>
 
-## Un leader (synchrone)
+### Un leader (synchrone)
 
 Le 2ème write
 - est mis en attente
@@ -2160,7 +2160,7 @@ Le 2ème write
 </div>
 <div>
 
-## Multi-leader (asynchrone)
+### Multi-leader (asynchrone)
 
 Les deux writes **réussissent**, conflit détecté **plus tard**
 
@@ -2170,6 +2170,59 @@ Les deux writes **réussissent**, conflit détecté **plus tard**
 > ## 💡 Réplication synchrone entre leader ?
 > Perte du principal avantage : écritures indépendantes
 > ⇒ 🛑 Utiliser un seul leader !
+
+---
+
+## Évitement de conflit
+
+### Observation
+
+> ℹ️ Beaucoup d'implémentation multi-leader implémentent mal la gestion des conflits
+
+### Appliquer une gestion d'évitement de conflits ✅
+
+* 💡 Router toutes les écritures d’un **même enregistrement** vers **un leader désigné**
+   > *ex:* Données personnelles utilisateur dans un « home Datacenter » (parfait pour optimisation géographique)
+
+* ⚠️ Re-routage possible (panne datacenter, déménagement utilisateur...)
+⇒ retour du risque de conflits
+
+---
+
+## Converger vers un état cohérent
+
+### Un leader
+> Les écritures sont appliquées selon un ordre unique, défini par le traitement du leader.
+
+### Plusieurs leaders
+> Chaque nœud peut appliquer les écritures dans un ordre différent, ce qui conduit à plusieurs ordonnancements équivalents mais potentiellement divergents.
+
+---
+
+### Objectif :
+> Avoir **tous les réplicas** doivent résoudre les conflits de manière à finir avec le **même état final**.
+
+- Approches communes :
+  - **LWW** (*Last Write Wins*) via timestamp/ID max → simple mais **perte de données**
+  - **Priorité du # de répliques** (ID de nœud) → aussi perte potentielle
+    - <span class="math"> x </span> répliques avec`v:2`
+    - <span class="math"> y </span> répliques `v:1`
+    - si <span class="math"> x < y </span> alors `v:1`
+  - **Fusion** des valeurs (ex. concat triée) → dépend du domaine
+  - **Conflit enregistré**, résolu plus tard (prompt à l'utilisateur/code applicatif)
+
+---
+
+
+
+---
+
+
+---
+
+
+---
+
 
 ---
 

@@ -72,3 +72,8 @@ section.transition {
 .ref {
   font-size: 0.5em;
 }
+
+.math {
+  font-size: 0.9em;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
