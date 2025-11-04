@@ -3,7 +3,7 @@ title       : Base de donnée 4
 author      : Sébastien Drobisz
 description : Supports de l'UE 5DON4D.
 keywords    : NoSQL, distribué, dénormalisation
-marp        : true
+marp        : false
 paginate    : true
 theme       : sdr
 footer      : "SDR - 5DON4D"
@@ -1584,7 +1584,7 @@ Comment charger les données du leader ?
 
 <!-- _class: transition3 -->
 
-Prise en charge d'une panne de nœud
+Prise en charge d'une panne de nœud (outage)
 
 ---
 
@@ -1888,7 +1888,7 @@ En général : < 1s, mais peut atteindre plusieurs secondes ou minutes.
 
 ---
 
-## ⚖️ Architecture courante
+## Architecture courante
 
 - **Leader-based replication** :
   - écriture → **leader**
@@ -1971,13 +1971,33 @@ Nous avons besoin de cohérence : *read-after-write* ou encore *read-your-write*
   - demander à un autre follower,
   - mettre la requête en pause.
 
-> **logical Timestamp**
-> * log sequence number 
-> * horloge du système
+> **Logical Timestamp**
+> - log sequence number
+> - horloge du système
 
 ---
 
 ## 2. Monotonic reads
+
+### Situation
+
+- Un utilisateur lit depuis deux réplicas différents.
+  - 1ère lecture → follower à jour (petit lag)
+  - 2e lecture → follower en retard (grand lag)
+- Résultat : il voit les **données reculer dans le temps**
+
+---
+
+## Exemple
+
+> L’utilisateur voit d’abord un nouveau commentaire apparaître,  
+> puis disparaître lors d’un rafraîchissement.
+
+> **Garantie monotonic read**
+> « On ne lit jamais une version plus ancienne que celle déjà vue. »
+
+---
+
 <center>
 
 ![h:500](./img/monotonic_read.png)
@@ -1985,7 +2005,24 @@ Nous avons besoin de cohérence : *read-after-write* ou encore *read-your-write*
 
 ---
 
+## Solutions
+
+- Associer chaque utilisateur à **un même replica** :  
+  - ex. hash sur l’ID utilisateur.  
+- Si le replica échoue → basculer vers un autre plus à jour.
+
+---
+
+
 ## 3. consistent Prefix Reads
+
+### mise en situation
+
+**Mr. Poons :** “How far into the future can you see?”  
+**Mrs. Cake :** “About ten seconds, Mr. Poons.”  
+→ Sur un follower lent : la réponse arrive avant la question.
+
+---
 
 <center>
 
@@ -1995,14 +2032,153 @@ Nous avons besoin de cohérence : *read-after-write* ou encore *read-your-write*
 
 ---
 
+## Consistent Prefix Reads
+
+> En cas de causalité, les écritures doivent toujours être lues dans l'ordre temporel.  
+>  
+> Si A précède B, on ne peut pas lire B avant A.
+
+Difficile à garantir lorsqu'il y a **plusieurs partitions (leader)** :
+- Pas d’ordre global entre partition (écriture).
+- Certaines partitions peuvent être plus à jour que d’autres.
+
+---
+
+<!-- _class: transition2 -->
+Réplication Multi-Leader
+
+![h:300](./img/multi-leader_scheme.svg)
+
+---
+
+## Idées générales
+
+- Au lieu d’un **seul leader**, **plusieurs nœuds** acceptent des écritures.
+- Chaque leader est aussi **follower** des autres.
+- Avantage clé : écrire localement même si un lien réseau vers un autre DC est coupé.
+- Inconvénient majeur : **conflits d’écriture** possibles.
+
+---
+
+## Moins fréquent que la réplication avec un leader
+
+- En **monodatacenter**, la complexité dépasse souvent les gains.
+- Utile quand :
+  - multi-datacenters (ex: réplication géographique)
+  - clients **offline** (sync différée) 📱
+  - édition **collaborative** en **temps réel**
+
+---
+
+# Cas d'usage
+
+* Multi-datacenters
+* Client offline
+* Édition collaborative
+
+---
+
+## Cas d’usage — Multi-datacenters
+
+- **Single-leader** :
+  - toutes les écritures traversent l’Internet → **latence** élevée
+  - sensibilité aux pannes du DC leader
+- **Multi-leader** :
+  - écriture **locale**, réplication **asynchrone** inter-DC
+  - meilleure tolérance aux pannes/réseau
+- ⚠️ Risque : conflits entre DC → **résolution nécessaire**
+
+---
+
+<center>
+
+![h:550](./img/multi-leader_replication_x_multi-DC.png)
+</center>
+
+---
+
+<center>
+
+![h:300](./img/hazard-area-op.png)
+
+</center>
+
+Zone dangereuse à éviter si possible.
+
+- Configuration piégeuse,
+- intéractions subtiles avec d'autres sgbd (génération auto d'ID, triggers...)
+
+---
+
+## Cas d’usage — Clients offline (calendrier)
+
+- Chaque appareil = db interne agit comme mini-leader local.
+- Modifs en local, **sync asynchrone** quand réseau dispo.
+- Lag de quelques **heures/jours** possible.
+- Modèle conceptuel ≈ multi-DC « extrême ».
+- Exemples historiques : calendriers.
+
+> et google doc ?
+
+---
+
+![bg left:33%](./img/google-doc_logo.svg)
+
+## Cas d’usage — Édition collaborative
+
+- Plusieurs éditeurs → **écritures concurrentes**
+- Changements fins (ex. **frappe par frappe**), (pas de modification offline)
+- Besoin de **résolution de conflits** (algos dédiés)
+- Alternative : verrou (équivaut à single-leader + transactions)
+
+---
+
+# Prise en charge des conflits
+
+---
+
+## Deux leaders modifient **la même donnée** en parallèle
+
+<center>
+
+![h:400](./img/multi-leader_conflict.png)
+</center>
+
+---
+
+# Détection de conflit **Synchrone** & **Asynchrone**.
+
+<div class="columns">
+<div>
+
+## Un leader (synchrone)
+
+Le 2ème write
+- est mis en attente
+- ou annulée
+
+</div>
+<div>
+
+## Multi-leader (asynchrone)
+
+Les deux writes **réussissent**, conflit détecté **plus tard**
+
+</div>
+</div>
+
+> ## 💡 Réplication synchrone entre leader ?
+> Perte du principal avantage : écritures indépendantes
+> ⇒ 🛑 Utiliser un seul leader !
+
+---
+
 <center>
 
 ![](./img/work-in-progress.jpeg)
 <center>
 
-
 ---
-
 
 <!-- _class: biblio -->
 
