@@ -2260,7 +2260,66 @@ Les deux writes **réussissent**, conflit détecté **plus tard**
 - **Ring (cercle)** : chaque leader transmet à un et un seul voisin.
 - **Star / arbre** : un seul leader reçoit et transmet aux autres leaders.
 - **All-to-all** : chaque leader transmet à tous les autres.
-> Tag d’ID de nœuds traversés dans le log pour prévenir les boucles.
+> Tag d’ID de nœuds traversés dans le log pour prévenir les boucles (pensez au parcours de graphe en 3alg3).
+
+---
+
+### Tolérance aux pannes & Ordonnancement
+
+- **Ring & Star** : panne d’un nœud → propagation interrompue
+- **All-to-all** : meilleure résilience (évite le single point of failure), mais **désordre d’arrivée** possible
+⇒ Problème de **causalité** :
+  - un **UPDATE** peut arriver avant l’**INSERT** correspondant sur un nœud
+  - horloges insuffisantes → besoin de **version vectors** / suivi causal
+
+---
+<center>
+
+![h:450](./img/all_to_all_causality.png)
+</center>
+
+⚠️ Attention souvent pas ou mal géré. Toujours vérifier la prise en charge de ce type de conflits par le sgbd si important pour l'application.
+
+---
+
+<!-- _class: transition2 -->
+Réplication sans leader.
+
+![h:300](./img/leaderless_scheme.svg)
+
+---
+
+## Idées générales
+
+- Pas de **leader** : **n’importe quel replica** peut accepter des écritures.
+- Le client envoie aux **plusieurs réplicas** (via un **coordinateur** léger).
+- Pas d’**ordre global** imposé → conséquences sur cohérence et résolutions de conflits.
+- Exemples : **Cassandra**, **Riak**, **Voldemort** (inspirés de **Amazon Dynamo**).
+
+---
+
+## Écrire quand un nœud est down
+
+- Avec un ou plusieurs leader, on doit attendre un failover (reprise du leader).
+- Sans leader (exemple 3 réplicas)
+   - le client écrit en **parallèle** aux 3.  
+   - Si 1 réplique est indisponible, **2 réplicas** réponde **ok**.
+   - Le nœud en retard lira ensuite une **valeur obsolète** → besoin de **réparation**.
+
+---
+
+### Pour résoudre le problème potentiel de valeur obsolète 
+  - une lecture à la base de données = plusieurs requêtes de lecture en parallèle (≠ replicas).
+  - des réponses ≠ peuvent être obtenue
+  - utilisation d'un numéro de version pour connaître la valeur la plus récente.
+
+---
+
+<center>
+
+![h:500](./img/quorum_w_r-read_repair.png)
+</center>
+
 
 ---
 
