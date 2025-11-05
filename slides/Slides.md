@@ -1819,7 +1819,7 @@ Le follower rejoue le WAL pour reconstruire l’état exact du leader.
 
 ### ✅ Avantages
 
-- Retrocompatibilité (*n* noeud, *m* version).
+- Retrocompatibilité (*n* nœud, *m* version).
 - Peut fonctionner avec plusieurs moteurs de stockage.
 - Facile à parser par des systèmes externes : 
 ex. Data warehouse (*change data capture*)
@@ -1900,7 +1900,7 @@ En général : < 1s, mais peut atteindre plusieurs secondes ou minutes.
 
 ⚠️ Mais cette approche repose sur une **réplication asynchrone** (pq ?).
 
-<!-- Dans le cas d'une approche de réplication synchrone, un seul noeud down ou isolé bloque tout le système. -->
+<!-- Dans le cas d'une approche de réplication synchrone, un seul nœud down ou isolé bloque tout le système. -->
 
 ---
 
@@ -2298,7 +2298,7 @@ Réplication sans leader.
 
 ---
 
-## Écrire quand un nœud est down
+# Écrire dans la bd quand un nœud est down
 
 - Avec un ou plusieurs leader, on doit attendre un failover (reprise du leader).
 - Sans leader (exemple 3 réplicas)
@@ -2320,6 +2320,92 @@ Réplication sans leader.
 ![h:500](./img/quorum_w_r-read_repair.png)
 </center>
 
+---
+
+## Correction de valeurs obsolètes
+
+À terme, toutes les données doivent être copiées sur chaque réplica.
+
+### Read Repair
+- Lecture envoyée à **plusieurs réplicas**.
+- Si divergence : le client (ou le nœud) **réécrit** la version la plus récente vers les réplicas en retard.
+- Efficace pour les **clés fréquemment lues**.
+
+### Anti-Entropy
+- **Processus de fond** qui compare et recopie les données manquantes entre réplicas.
+- Pas d’ordre garanti, **latence** de rattrapage possible.
+- Tous les systèmes ne l’implémentent pas.
+
+---
+
+## Quorums de lecture/écriture
+
+- 3 paramètres
+   - **n** : réplicas
+   - **w** : acks d’écriture (nb requêtes synchrones)
+   - **r** : acks de lecture
+
+> Pour qu'une requête d'écriture / lecture soit déclarées valide, le nombre de nœuds accusant le bon traitement doit être <span class="math"> >w</span> / <span class="math"> >r </span>
+
+---
+
+### Quorum write & quorum read
+
+> **w + r > n**
+> - On s'attend à avoir une valeur à jour.
+
+Les lectures et écritures qui respectent ces valeurs *r* et *w* sont appelée *quorum read* et *quorum write*.
+
+> **Typiquement**
+> - *n impaire* et *w = r = (n + 1) / 2*
+> - configurables dans les bd semblablent à la base de donnée Amazon Dynamo.
+
+---
+
+<div class="columns">
+<div>
+
+### 👎 w + r ≯  n
+
+![](./img/quorum_ko.svg)
+
+</div>
+<div>
+
+### ✅ w + r > n
+
+![](./img/quorum_ok.svg)
+
+</div>
+</div>
+
+---
+
+### Réflexion
+
+- Si **w < n**, on peut encore traiter les écritures avec un noeud indisponible
+- Si **r < n**, on peut encore traiter les lectures avec un noeud indisponible
+- si **n = 3**, **r = 2** et **w = 2**, on peut tolérer un noeud indisponible
+- Normalement, les lectures et écritures sont envoyées à tous les noeuds en parallèle. Ces paramètres déterminent le nombre de nœuds qu'on attend.
+- Si le nombre de réponses reçue n'atteind pas le seuil désiré, les requêtes retournent une erreur.
+
+---
+
+<center>
+
+![h:450](./img/quorum_example.png)
+</center>
+
+> Au moins une valeur **à jour** sera lue.
+
+---
+
+### Cause d'indisponibilité d'un noeud
+
+- Crash d'un noeud,
+- erreur lors de l'écriture (disque plein),
+- problème réseau entre le noeud et le client,
+- ...
 
 ---
 
