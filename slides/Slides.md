@@ -2206,23 +2206,61 @@ Les deux writes **réussissent**, conflit détecté **plus tard**
   - **LWW** (*Last Write Wins*) via timestamp/ID max → simple mais **perte de données**
   - **Priorité du # de répliques** (ID de nœud) → aussi perte potentielle
     - <span class="math"> x </span> répliques avec`v:2`
-    - <span class="math"> y </span> répliques `v:1`
+    - <span class="math"> y </span> répliques avec `v:1`
     - si <span class="math"> x < y </span> alors `v:1`
   - **Fusion** des valeurs (ex. concat triée) → dépend du domaine
   - **Conflit enregistré**, résolu plus tard (prompt à l'utilisateur/code applicatif)
 
 ---
 
+## Logiques de résolution personnalisée
 
+- **On write** : detection de conflit ↦ handler de conflit (rapide, *non interactif*)
+- **On read** : renvoyer versions multiples → app décide (peut impliquer l’utilisateur)
+> *Granularité*
+> Souvent par **ligne/document**, pas de transaction entière
+⇒ Chaque écriture est traitée séparément
 
 ---
 
+### Résolution automatique (compliqué 🤯)
+
+> **Cas d'école**
+>  Pannier amazon qui conserve les items ajoutés mais peut ne supprimer certains articles.
+
+> ### État de l'art en 2017
+> - **CRDTs** : famille de structures de données modifiées - de manière concurrente - sans conflit (compteurs, sets, listes...) (merge 2-voies)
+> - **Mergeable persistent data structures** : tracking de l'historique + merge 3-voies (git)
+> - **Operational Transformation (OT)** : édition collaborative (suite d'élément - ex: suite de caractères (Google Doc)
 
 ---
 
+## Exemple de conflits
+
+- Modification d'un même champ.
+- Réservation d'une chambre d'hotel
+- ...
 
 ---
 
+# Topologies multi-leaders
+
+> **Topologie de réplication**
+> Descrit les chemins de communication que les requêtes d'écriture doivent traverser pour se propager d'un leader aux autres leaders.
+
+> Cas nb leaders ≤ 2 identiques
+
+---
+
+<center>
+
+![h:280](./img/multi-leader_topology.png)
+</center>
+
+- **Ring (cercle)** : chaque leader transmet à un et un seul voisin.
+- **Star / arbre** : un seul leader reçoit et transmet aux autres leaders.
+- **All-to-all** : chaque leader transmet à tous les autres.
+> Tag d’ID de nœuds traversés dans le log pour prévenir les boucles.
 
 ---
 

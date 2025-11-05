@@ -7,6 +7,8 @@ Characters
 ↦ Suivi de 
 ↗ augmentation
 
+≤ ≥
+
 ≠ différent
 
 * [Symboles mathématiques](https://www.compart.com/fr/unicode/category/Sm)
