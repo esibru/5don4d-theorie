@@ -5,7 +5,8 @@ Characters
 → implique
 ⇒ d'où
 ↦ Suivi de 
-↗ augmentation
+↗ &#x2197; augmentation
+↘ &#x2198; diminution
 
 ≤ ≥
 
@@ -14,3 +15,5 @@ Characters
 * [Symboles mathématiques](https://www.compart.com/fr/unicode/category/Sm)
 * [Flèches](https://en.wikipedia.org/wiki/Arrows_(Unicode_block))
 
+✅ (:white-check-mark)
+❌ (:x)

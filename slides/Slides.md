@@ -2097,16 +2097,21 @@ Réplication Multi-Leader
 
 ---
 
+### ⚠️ **Multi-leader = terrain dangereux**
+
+<small>**Contexte :** les implémentations multi-leader peuvent produire des conflits et effets de bord difficiles à diagnostiquer.</small>
+
 <center>
 
-![h:300](./img/hazard-area-op.png)
+![h:200](./img/hazard-area-op.png)
 
 </center>
 
-Zone dangereuse à éviter si possible.
+- Fonctionalité **rétrofit** dans beaucoup de SGBD → pas pensée dès la conception du système,
+donc moins robuste et plus sujette aux effets de bord.
+- **Intéractions surprenantes** avec d’autres features : clés **auto-incrémentées**, **triggers**, **contraintes d’intégrité**…
 
-- Configuration piégeuse,
-- intéractions subtiles avec d'autres sgbd (génération auto d'ID, triggers...)
+> **Recommandation** : à éviter si possible, sauf besoin fort et maîtrise des risques.
 
 ---
 
@@ -2310,7 +2315,7 @@ Réplication sans leader.
 
 ### Pour résoudre le problème potentiel de valeur obsolète 
   - une lecture à la base de données = plusieurs requêtes de lecture en parallèle (≠ replicas).
-  - des réponses ≠ peuvent être obtenue
+  - des réponses ≠ peuvent être obtenues
   - utilisation d'un numéro de version pour connaître la valeur la plus récente.
 
 ---
@@ -2351,8 +2356,7 @@ Réplication sans leader.
 
 ### Quorum write & quorum read
 
-> **w + r > n**
-> - On s'attend à avoir une valeur à jour.
+> Avec **w + r > n**, on s'attend à avoir une **valeur à jour**.
 
 Les lectures et écritures qui respectent ces valeurs *r* et *w* sont appelée *quorum read* et *quorum write*.
 
@@ -2365,16 +2369,27 @@ Les lectures et écritures qui respectent ces valeurs *r* et *w* sont appelée *
 <div class="columns">
 <div>
 
-### 👎 w + r ≯  n
+### ❌ w + r ≯  n
 
-![](./img/quorum_ko.svg)
+<center>
+
+![h:350](./img/quorum_ko.svg)
+r = 1
+w = 2
+</center>
 
 </div>
 <div>
 
 ### ✅ w + r > n
 
-![](./img/quorum_ok.svg)
+<center>
+
+![h:350](./img/quorum_ok.svg)
+r = 2
+w = 2
+∃ un noeud avec la dernière valeur
+</center>
 
 </div>
 </div>
@@ -2406,6 +2421,252 @@ Les lectures et écritures qui respectent ces valeurs *r* et *w* sont appelée *
 - erreur lors de l'écriture (disque plein),
 - problème réseau entre le noeud et le client,
 - ...
+
+---
+
+## Adapter **r** et **w**
+
+- **w &#x2197; r &#x2198;** : écritures plus strictes, lectures potentiellement plus rapides.
+- **w &#x2198; r  &#x2197;** : lectures plus strictes, écritures potentiellement plus rapides.
+- On envoie aux **n** réplicas en parallèle, on **attend** **w** ou **r** réponses OK.
+
+On peut avoir r + w ≤ n. Effet : 
+- &#x2197; disponibilité
+- &#x2198; cohérence (&#x2197; chance de retourner des valeurs obsolètes)
+
+---
+
+# Limites du quorum
+
+Même avec **w + r > n** :
+- **Sloppy quorum** (voir plus loin) rompt l’overlap garanti.
+- Concurrence d’écritures → laquelle est supposée être la première ?
+- Conflit écriture/lecture en simultané → valeur incertaine.
+- Échecs partiels (disque plein, rollback partiel non effectué) → cas limites.
+- ⇒ Probabilité vs **garantie absolue**.
+
+> Qu'est-ce que la concurrence ?
+
+---
+
+<div class="columns">
+<div>
+
+### r/w concurrents
+
+<center>
+
+![h:500](./img/quorum_concurrence_wr.svg)
+</center>
+
+
+</div>
+<div>
+
+### Échecs partiels
+
+<center>
+
+![h:500](./img/quorum_locals-fails.svg  )
+</center>
+
+</div>
+</div>
+
+---
+
+## Monitoring staleness
+
+À quel point mes données sont-elles obsolètes ?
+
+* Cas avec 1 leader
+
+  > - Ordre déterminé par le leader.
+  > - Replication log disponible.
+  >
+  > ⇒ log leader - log follower = lag du follower. (Pensez aux commits dans git).
+
+* Cas sans leader
+
+  > - Pas d'ordre.
+  > - Des données sont potentiellement très vieilles sans système anti-entropie.
+  > 
+  > => Pas de système de monitoring généralement mis en place.
+
+---
+
+# Sloppy Quorums et Hinted Handoff
+
+Dans le cas d'un cluster conséquent, que faire s'il y a une panne local temporaire dans le réseau causant l'isolement de certains noeuds ?
+
+* retourner des erreurs pour chaque requête qui n'atteignement pas le quorum ?
+* accepter les requêtes d'écriture sur des noeuds atteignables, mais n'appartenant pas au noeuds « home ».
+
+> **Noeuds « home »**
+> Noeud designé pour le stockage d'une donnée.
+
+---
+
+<center>
+
+![h:280](./img/quorum_Sloppy.svg)
+</center>
+
+
+- **Sloppy quorum** : accepter w/r réponses **sur des nœuds atteignables**, pas forcément les nœuds « home ».
+- **Hinted handoff** : une fois le réseau rétabli, on **réachemine** vers les nœuds « home ».
+- Gain de **disponibilité** en écriture, mais **pas** de garantie de quorum strict (lire la dernière valeur) tant que le hinted handoff n’est pas terminé.
+
+---
+
+# Détection des écritures concurrentes
+
+- Sans ordre global, l’arrivée peut être **dans un ordre différent** selon les nœuds.
+- Objectif : être **éventuellement cohérent** (si possible sans **perdre** de données).
+- Nécessité d’identifier **concurrence vs causalité**.
+
+---
+
+## Mise en situation
+
+<center>
+
+![h:300](./img/concurrent_write-dynamo-style.png)
+</center>
+
+- Incohérence permanente. Le noeud 2 pense que la dernière valeur est **B**.
+- Il n'y a pas vraiment de valeur "meilleure" qu'une autre.
+> Comment retrouver une convergence vers un état cohérent ?
+
+---
+
+## Last write win (LWW)
+
+- Résolution simple : garder la **plus récente** (timestamp/ID max) et **jeter** le reste.
+- ✅ Convergence
+- ❌ **Perte de données** (même si les writes ont été “ackés”), sensible au **clock skew**.
+- Utilisable si clé écrite une fois ⇒ **immuable** (e.g., UUID par write) ou si perte acceptable (**cache**).
+
+> Écritures **concurrentes**
+> Si cela n'a pas vraiment de sens de dire qu'une écriture est plus récente qu'une autre, on parle d'écriture *concurrence*. (Ordre indéfini)
+
+---
+
+
+<div class="columns">
+<div>
+
+<center>
+
+### Happened before (Causalité)
+![h:300](./img/all_to_all_causality.png)
+</center>
+
+<small>L'opération *B* doit survenir après l'opération *A*. Il y a une dépendance de causalité.</small>
+
+</div>
+<div>
+
+<center>
+
+### Concurrence
+![h:300](./img/concurrent_write-dynamo-style.png)
+</center>
+
+<small>Les clients ne savent pas que les autres ont réalisé une opération.</small>
+</div>
+</div>
+
+> Si une opération est dépendante d'une autre, elle doit écraser sa valeur. Sinon, il faut gérer le conflit.
+
+---
+
+<!-- _class: cite -->
+
+Il nous faut un algorithme pour déterminer si deux opérations sont concurrentes ou non.
+
+---
+
+## Réflexion (Concurrence, temps et relativité)
+
+* Le moment exacte ne suffit pas à déterminer s'il y a causalité.
+* En **physique (théorie de la relativité)** : Deux évènements qui ont lieu à une certaines distance ne peuvent pas avoir d'influence entre-eux si le temps qui séparent ces deux évènement est inférieur au temps nécessaire pour parcourir cette distance.
+* En **informatique** : même si le temps permet à la lumière de parcourir la distance il y a d'autres facteurs qui influence (mode offline: app calendrier...).
+
+---
+
+## Capturer le lien *happend before*.
+
+1. Algorithme avec 1 réplica.
+2. Algorithme étendu pour n réplicas.
+
+---
+
+## Gestion des conflits/causalités avec 1 réplica
+
+
+<div class="columns">
+<div>
+
+1. Ajout de `milk` par `client 1` (v1).
+2. Ajout de `eggs` par `client 2` (v2) (2 valeurs ≠ retournées).
+3. Ajout de `flour` par `client 1` (à partir de v1) (v3 avec 2 valeurs ≠ retournées).
+4. Fusion et ajout de `ham` par `client2` (à partir de v2) (v4 avec 2 valeurs ≠ retournées).
+  ⚠️ fusion de valeurs inférieures à la version de départ.
+5. Fusion et ajout de `bacon` (à partir de v3) (v5 avec 2 valeurs ≠ retournées)
+
+</div>
+<div>
+
+<center>
+
+![](./img/algo_happened-before_1_replica.png)
+</center>
+
+</div>
+</div>
+
+---
+
+<center>
+
+![h:300](./img/algo_happened-before_1_replica.png)
+</center>
+
+### Graphe de dépendance causale
+
+<center>
+
+![h:120](./img/causal_dependencies_graph.png)
+</center>
+
+<small>Les flèches indiquent quelle opération *arrive avant* (est causale de).</small>
+
+---
+
+- Pour vérifier si deux opérations sont concurrentes, il suffit de vérifier les numéros de version.
+
+**Exemples**
+
+- à l'étape 3 : 
+   - la valeur `[milk]` (v1) est remplacée par `[milk, flour]`,
+   - la valeur `[eggs]` (v2) est restée inchangée (*concurrence*).
+- à l'étape 5 : 
+   - la valeur `[milk, flour]` (v3) est remplacée par `[milk, flour, eggs, bacon]`,
+   - la valeur `[eggs, milk, ham]` (v4) est restée inchangée (*concurrence*).
+
+---
+
+### Étapes 
+
+- Le serveur maintient un numéro de version pour chaque clé (et chaque valeur). La version est incrémenté à chaque écriture.
+- Quand un client lit une clé, toutes les valeurs sont retournées.
+- Quand un client écrit (modifie) une clé, la version du l'ancienne lecture est inclue à la requête.
+- Quand le serveur reçoit un write avec une certaine version (*vx*), il peut écraser les valeurs avec une version *vy* qui vérifient *vy* ≤ *vx*.
+
+---
+
+## Gestion de conflit avec n réplicas (Version vectors)
 
 ---
 

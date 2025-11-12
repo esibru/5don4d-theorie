@@ -77,3 +77,8 @@ section.transition {
   font-size: 0.9em;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+
+small {
+  font-size: 0.8em;
+  color: #999;
+}
