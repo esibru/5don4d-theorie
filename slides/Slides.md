@@ -2562,7 +2562,7 @@ Dans le cas d'un cluster conséquent, que faire s'il y a une panne local tempora
 ![h:300](./img/all_to_all_causality.png)
 </center>
 
-<small>L'opération *B* doit survenir après l'opération *A*. Il y a une dépendance de causalité.</small>
+<small>A **happens-before** B si B **connaît** / **dépend** de A.</small>
 
 </div>
 <div>
@@ -2573,7 +2573,7 @@ Dans le cas d'un cluster conséquent, que faire s'il y a une panne local tempora
 ![h:300](./img/concurrent_write-dynamo-style.png)
 </center>
 
-<small>Les clients ne savent pas que les autres ont réalisé une opération.</small>
+<small>Si A et B s’ignorent mutuellement → **concurrents**.</small>
 </div>
 </div>
 
@@ -2666,7 +2666,93 @@ Il nous faut un algorithme pour déterminer si deux opérations sont concurrente
 
 ---
 
-## Gestion de conflit avec n réplicas (Version vectors)
+## Gestion de conflit avec *n* réplicas (Version vectors)
+
+- Un **numéro de version par réplique** et par clé, transmis aux clients à la lecture, renvoyé à l’écriture.
+- Chaque réplica incrémente son numéro lorsqu'il y a une écriture et garde une trace des autres numéros lors du traitement d'une écriture.
+- Permet de savoir si une écriture vient après, avant ou en parallèle d’une autre.
+
+> La collection de ces numéros est appelée *vecteur de version*.
+
+---
+
+1. État initial
+   Valeur : "X"
+   Version vector : { A: 0, B: 0, C: 0 }
+2. A écrit : "Y"
+   Version vector : { A: 1, B: 0, C: 0 }
+   > Cette valeur inclut tout ce que A connaissait jusque-là, plus une nouvelle écriture.
+3. B écrit : "Z"
+   Version vector : { A: 0, B: 1, C: 0 }
+   > Ces deux écritures sont concurrentes, car :
+   >  A ne connaît pas la mise à jour de B
+   >  
+   >  B ne connaît pas celle de A
+   >  → aucun des deux vecteurs ne “domine” l’autre.
+---
+
+4. Quand A et B synchronisent leurs états
+   Valeur 1 : "Y" { A: 1, B: 0, C: 0 }
+   Valeur 2 : "Z" { A: 0, B: 1, C: 0 }
+   > → Comme aucun vecteur n’est supérieur à l’autre,
+   > les deux sont conservés comme “siblings” (valeurs concurrentes).
+
+5. Lecture + résolution (ex : par fusion )
+   Version vector fusionné : { A: 1, B: 1, C: 0 } valeur "YZ"
+6. Écriture sur C
+   Nouvelle version : { A: 1, B: 1, C: 1 }
+
+---
+
+## Leaderless en quelques mots
+
+- **Leaderless** = haute **disponibilité** & **latence** maîtrisée, mais **cohérence** plus faible.
+- **Quorums** (r, w, n) → règlent un **compromis probabilité/latence**.
+- Concurrence → prévoir **détection** (version vectors) & **résolution** (merge/CRDTs).
+- **Sloppy quorum + hinted handoff** : robuste, mais retarde la visibilité globale.
+
+---
+
+# En résumé
+
+## Pourquoi répliquer les données ?
+
+- 🔥 **Haute disponibilité** → le système continue même si un nœud (ou un datacenter) tombe.  
+- 📱 **Opération déconnectée** → permettre à une appli de fonctionner sans connexion réseau.  
+- 🌍 **Latence réduite** → placer les données plus près géographiquement des utilisateurs.  
+- 📈 **Scalabilité** → répartir les lectures sur plusieurs répliques pour soulager la charge.
+
+> *Objectif simple* : plusieurs copies cohérentes des mêmes données.  
+> *Réalité* : problèmes de concurrence, retards, pannes et synchronisation complexes.
+
+---
+
+## Trois modèles de réplication
+
+| Modèle | Principe | Avantages | Inconvénients |
+|--------|-----------|------------|----------------|
+| 🟩 **Single Leader** | 1 seul nœud reçoit les écritures, réplique vers les autres | Simple, cohérent | Risque de perte si le leader tombe (asynchrone) |
+| 🟧 **Multi Leader** | Plusieurs leaders acceptent des écritures, se synchronisent | Tolérance aux pannes, utile multi-datacenter | ⚠️ Conflits d’écriture possibles |
+| 🟥 **Leaderless** | Tous les nœuds peuvent recevoir des écritures | Très disponible, pas de failover | Cohérence faible, détection/merge de conflits |
+
+> La **synchronicité** (synchronous vs asynchronous) influence directement  
+> la cohérence et la perte potentielle de données en cas de panne.
+
+---
+
+## Cohérence et conflits
+
+### Modèles de cohérence utiles
+- **Read-after-write** → voir ses propres écritures immédiatement.
+- **Monotonic reads** → ne jamais « revenir dans le passé ».
+- **Consistent prefix** → garder l’ordre logique des événements.
+
+### Conflits d’écriture
+- Apparaissent avec les modèles multi-leader et leaderless.
+- **Détection** : *version vectors* (déterminer si deux écritures sont concurrentes).
+- **Résolution** : CRDTs ou fusion applicative pour convergence automatique.
+
+> 💡 Répliquer, c’est arbitrer entre **cohérence**, **disponibilité** et **performance**.
 
 ---
 
