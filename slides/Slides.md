@@ -2388,7 +2388,7 @@ w = 2
 ![h:350](./img/quorum_ok.svg)
 r = 2
 w = 2
-∃ un noeud avec la dernière valeur
+∃ un nœud avec la dernière valeur
 </center>
 
 </div>
@@ -2398,10 +2398,10 @@ w = 2
 
 ### Réflexion
 
-- Si **w < n**, on peut encore traiter les écritures avec un noeud indisponible
-- Si **r < n**, on peut encore traiter les lectures avec un noeud indisponible
-- si **n = 3**, **r = 2** et **w = 2**, on peut tolérer un noeud indisponible
-- Normalement, les lectures et écritures sont envoyées à tous les noeuds en parallèle. Ces paramètres déterminent le nombre de nœuds qu'on attend.
+- Si **w < n**, on peut encore traiter les écritures avec un nœud indisponible
+- Si **r < n**, on peut encore traiter les lectures avec un nœud indisponible
+- si **n = 3**, **r = 2** et **w = 2**, on peut tolérer un nœud indisponible
+- Normalement, les lectures et écritures sont envoyées à tous les nœuds en parallèle. Ces paramètres déterminent le nombre de nœuds qu'on attend.
 - Si le nombre de réponses reçue n'atteind pas le seuil désiré, les requêtes retournent une erreur.
 
 ---
@@ -2415,11 +2415,11 @@ w = 2
 
 ---
 
-### Cause d'indisponibilité d'un noeud
+### Cause d'indisponibilité d'un nœud
 
-- Crash d'un noeud,
+- Crash d'un nœud,
 - erreur lors de l'écriture (disque plein),
-- problème réseau entre le noeud et le client,
+- problème réseau entre le nœud et le client,
 - ...
 
 ---
@@ -2497,13 +2497,13 @@ Même avec **w + r > n** :
 
 # Sloppy Quorums et Hinted Handoff
 
-Dans le cas d'un cluster conséquent, que faire s'il y a une panne local temporaire dans le réseau causant l'isolement de certains noeuds ?
+Dans le cas d'un cluster conséquent, que faire s'il y a une panne local temporaire dans le réseau causant l'isolement de certains nœuds ?
 
 * retourner des erreurs pour chaque requête qui n'atteignement pas le quorum ?
-* accepter les requêtes d'écriture sur des noeuds atteignables, mais n'appartenant pas au noeuds « home ».
+* accepter les requêtes d'écriture sur des nœuds atteignables, mais n'appartenant pas au nœuds « home ».
 
-> **Noeuds « home »**
-> Noeud designé pour le stockage d'une donnée.
+> **Nœuds « home »**
+> Nœud designé pour le stockage d'une donnée.
 
 ---
 
@@ -2534,7 +2534,7 @@ Dans le cas d'un cluster conséquent, que faire s'il y a une panne local tempora
 ![h:300](./img/concurrent_write-dynamo-style.png)
 </center>
 
-- Incohérence permanente. Le noeud 2 pense que la dernière valeur est **B**.
+- Incohérence permanente. Le nœud 2 pense que la dernière valeur est **B**.
 - Il n'y a pas vraiment de valeur "meilleure" qu'une autre.
 > Comment retrouver une convergence vers un état cohérent ?
 
@@ -2755,6 +2755,339 @@ Il nous faut un algorithme pour déterminer si deux opérations sont concurrente
 > 💡 Répliquer, c’est arbitrer entre **cohérence**, **disponibilité** et **performance**.
 
 ---
+
+<!-- _class: transition2 -->
+Partitionnement (sharding)
+
+<!-- https://www.mongodb.com/docs/manual/core/sharding-choose-a-shard-key/#choose-a-shard-key -->
+
+---
+
+# Introduction
+
+Dans le chapitre précédent, nous avons vu **la réplication** :  
+
+> **Réplication**
+> Plusieurs copies des mêmes données sur plusieurs nœuds.
+
+Mais pour des **très grands volumes** ou une **forte charge de requêtes**, la réplication ne suffit plus :  
+
+> → il faut **découper les données** en *partitions* (aussi appelées *shards*).
+
+---
+
+## Qu’est-ce qu’une partition ?
+
+- Chaque donnée (ligne, document, enregistrement) 
+  appartient **à une seule partition**.
+
+- Une partition = un *mini-database* autonome  
+  (mais le système peut exécuter des opérations sur plusieurs partitions).
+
+---
+
+
+## **Objectif : Scalabilité**
+
+> Différentes partitions peuvent être placées sur différents nœuds dans un cluster.
+
+- Répartir les données sur plusieurs disques / machines  
+- Répartir la charge de requêtes sur plusieurs processeurs  
+- Permettre à chaque nœud de traiter **indépendamment** les requêtes d’une partition.
+
+---
+
+## Pourquoi partitionner ?
+
+- Un seul serveur ne suffit plus  
+  - stockage trop grand  
+  - trop de requêtes par seconde
+
+- Les partitions permettent :
+  - Scalabilité en **lecture**
+  - Scalabilité en **écriture**
+  - Scalabilité en **stockage**
+  - Possibilité de paralléliser certaines requêtes (analytique)
+
+📌 Utilisé depuis les années 80 (Teradata, NonStop SQL)  
+📌 Massivement repris dans NoSQL & data warehouses modernes
+
+---
+
+## 🗺️ Plan du chapitre
+
+Dans ce chapitre :
+
+1. **Stratégies de partitionnement d'un grand ensemble de donnée**  
+   - Range partitioning  
+   - Hash partitioning  
+   - Partitionnement des index  
+
+2. **Rebalancing**  
+   - Comment déplacer les partitions  
+   - Ajout / suppression de nœuds  
+
+3. **Request Routing**  
+   - Comment savoir quel nœud contient quelle partition ?
+
+---
+
+<!-- _class: transition3 -->
+I. Partitionnement et réplication  
+
+---
+
+## Partitionnement & Replication
+
+Le partitionnement est **souvent combiné** avec la réplication :
+
+- Chaque partition est stockée **sur plusieurs nœuds**  
+  → pour une meilleure tolérance aux pannes  
+- Même si une donnée appartient à **une seule partition**,  
+  elle existe **en plusieurs copies**.
+
+> **Un nœud peut contenir plusieurs partitions**.
+
+---
+
+## Leaders & Followers dans les partitions
+
+Si on utilise un modèle **leader–follower** :
+
+- Chaque partition a **un leader** sur un nœud  
+- Et **des followers** sur d’autres nœuds  
+- Un même nœud peut être :
+  - leader pour certaines partitions
+  - follower pour d’autres
+
+📌 Tous les concepts du chapitre 5 sur la réplication s’appliquent aussi ici.  
+🗒️ Pour simplifier, la suite du chapitre ignore la réplication.
+
+---
+
+<center>
+
+![h:400](./img/sharding-replication_leader-follower-stream.png)
+</center>
+
+> Combinaison de partitionnement et réplication : Chaque nœud agit comme un leader pour certaines partitions et comme un follower pour d'autres.
+
+---
+
+<!-- _class: transition3 -->
+II. Sharding de donnée type clé-valeur
+
+---
+
+## Comment partitionner ?
+- Répartir **équitablement** les données et la charge
+- Éviter qu’un nœud devienne le goulot d’étranglement  
+  → phénomène de **skew** (déséquilibre)
+- Un partition très sollicitée = **hot spot**
+
+## 💡 Idée
+Répartir les clés **aléatoirement** ❌  
+→ bonne répartition, mais impossible de savoir où lire → requêtes broadcast (requêtes envoyées en parallèle à tous les nœuds).
+
+---
+
+
+# Partitionnement par plage de clés
+
+<center>
+
+![h:400](./img/key-range_encyclopedia.png)
+</center>
+
+---
+
+## Principe
+
+- Chaque partition couvre une **plage continue de clés**  
+   - ex. « de A à C », « de C à F », etc.
+- Analogie : les volumes d’une **encyclopédie papier**
+- Si les limites des plages sont connues :
+   - On peut déterminer immédiatement **dans quelle partition** se trouve une clé
+   - Et contacter **directement le bon nœud**
+
+---
+
+## Plages inégales = meilleure distribution
+
+- Les données réelles **ne sont pas uniformes**
+- Exemple :
+  - « A » et « B » ont énormément de mots  
+  - « X », « Y », « Z » en ont très peu
+- Si on découpait naïvement « 2 lettres par tome »,  
+  → certains volumes seraient énormes  
+  → d’autres presque vides  
+  → donc **mauvaise répartition de la charge**
+
+> 📌 **adapter les plages aux données réelles**
+> → limites choisies **manuellement** par un administrateur ou **automatiquement** par le système.
+
+---
+
+## ✅ Avantages du Key Range Partitioning
+
+Dans chaque partition, les clés sont **triées**. Pratique pour : 
+
+### Range scans
+
+  > **Exemples :** 
+  > - Rechercher toutes les mesures d’un ensemble de capteurs entre  
+  >    `2025-01-01 00:00` et `2025-01-31 23:59`.
+  > - **Index concaténé**
+  >   Le clé elle-même sert d'index multi-colonnes pour récupérer des enregistrements liés en 1 requête.
+  
+Cas d'utilisation :
+- Séries temporelles (logs, événement ordonnées),
+- données liées...
+
+---
+
+## ❌ Inconvénient : Création d'Hot Spots
+
+Si la clé = timestamp :
+- Les écritures arrivent *en temps réel*
+- Donc **toujours dans la même plage**
+- Donc **toujours dans la même partition**
+  
+> **Conséquence :** 
+> - une partition surchargée (« hot spot ») 🐜,
+> - les autres restent presque inactives 🦗.
+
+---
+
+## Solution
+
+Ne pas utiliser directement le timestamp comme clé.
+
+### Ex : capteurs IoT  
+❌ clé = `2025-11-19T10:12:53` → même partition
+✔️ clé = `capteur42:2025-11-19T10:12:53`
+
+Effets :
+- Partitionnement par **sensor_id** → répartition équilibrée
+- Tri secondaire par timestamp → range scans encore possibles  
+  (1 requête par capteur, mais parfaitement scalable)
+
+---
+
+# Partitionnement par hashage de clé
+
+*Motivation :* éviter les **hot spots** présents avec le partitionnement par range.
+
+💡 Idée : appliquer une **fonction de hachage** à la clé  
+→ transforme une distribution déséquilibrée  
+→ en distribution **uniforme** sur un grand espace numérique.
+
+**Exemple :**
+Un hash 32-bit → nombre entre 0 et 2<sup>32</sup>−1  
+→ même si les chaînes sont proches, leurs hash sont "aléatoires".
+
+---
+
+## Les exigences pour le hachage
+
+- Pas besoin de propriété cryptographique forte
+- Doit être:
+  - **déterministe**
+  - **uniformement distribué**
+  - Identique sur tous les nœuds (⚠️ attention aux hash intégrés)
+
+### Usages réels :
+- Cassandra, MongoDB → MD5
+- Voldemort → Fowler–Noll–Vo (FNV)
+
+> 💀 Java `hashCode()` ou Ruby `Object#hash`
+> → peuvent retourner des valeurs différentes entre processus.
+
+---
+
+<center>
+
+![](./img/partitioning_hash-key.png)
+</center>
+
+---
+
+## Perte des capacités de Range Scans
+
+Avec Hash Partitioning :
+- Des clés proches → hash complètement différents
+- Elles se retrouvent dans **des partitions différentes**
+- L’ordre naturel est **perdu**
+
+Conséquences :
+- Requêtes de plages → doivent interroger **toutes les partitions**
+- ⇒ ❌ Impossible d’effectuer un range scan efficace
+
+Exemples :
+- MongoDB (mode hashed) → range query envoyé sur tous les nœuds
+- Riak, Couchbase, Voldemort → pas de range query sur la clé primaire
+
+---
+
+## Cassandra : Hash + Range dans un même modèle
+
+Cassandra utilise une **clé primaire composée** :
+
+> `PRIMARY KEY (partition_key, clustering_key1, clustering_key2, ...)`
+
+- Seul `partition_key` est hashé pour déterminer la partition
+
+- Les autres colonnes
+  → sont stockées **triées** dans la partition  
+  → permettent des **range scans efficaces**  
+
+---
+## Utilisation type d'une clé primaire composée : flux d’activité / réseaux sociaux
+
+Clé primaire :  
+`(user_id, update_timestamp)`
+
+Résultat :
+- Tous les posts d’un user → même partition
+- Ordonnés par timestamp → parfait pour naviguer dans l’historique
+- Accès rapide :
+  - "Derniers posts"
+  - "Posts entre t1 et t2"
+
+Partitionnement :
+- Différents utilisateurs → différentes partitions → charge répartie
+
+---
+
+# Charge déséquilibrée & Hot Spots
+
+- Même avec un **partitionnement par hash**, certains scénarios créent des **hot spots**.  
+- Exemple : un utilisateur célèbre déclenche  
+  énormément de lectures/écritures sur *une seule clé*.
+- Résultat → toutes les requêtes convergent vers **la même partition** → surcharge.
+
+---
+
+<!-- _class: transition3 -->
+III. Partitionnement et index secondaires
+
+---
+
+<!-- _class: transition3 -->
+IV. Rééquilibrage de partition (rebalancing)
+
+---
+
+<!-- _class: transition3 -->
+V. Routing de requêtes
+
+---
+
+<!-- _class: transition3 -->
+VI. Résumé
+
+---
+
 
 <center>
 
