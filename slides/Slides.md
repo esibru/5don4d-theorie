@@ -1713,19 +1713,19 @@ Combien de temps faut-il attendre avant de déclarer un nœud mort ?
   → faux positifs et failover inutiles.
   - un pic de requêtes peut provoquer un ralentissement (pas le meilleur moment pour changer de leader...),
   - un ralentissement sur le réseau peut survenir.
-   
-   
+
+
   Dans les deux cas, un failover inutile risque d'empirer la situation.
 
 ---
 
 ## En pratique
 
-- Beaucoup d’équipes préfèrent un **failover manuel**,  
+- Beaucoup d’équipes préfèrent un **failover manuel**,
   même si le système supporte l’automatique.
 - Ces problèmes relèvent des **fondamentaux des systèmes distribués** :
-  - Pannes de nœuds  
-  - Réseaux non fiables  
+  - Pannes de nœuds
+  - Réseaux non fiables
   - Équilibre entre cohérence, disponibilité, durabilité et latence
 
 ---
@@ -1738,7 +1738,7 @@ Implémentation des logs de réplication
 
 <!-- _class: cite -->
 
-Le **leader** applique les écritures et envoie les changements à ses **followers**.  
+Le **leader** applique les écritures et envoie les changements à ses **followers**.
 Ces changements sont enregistrés dans un **log de réplication**. Comment transmettre ces logs ?
 
 ---
@@ -1924,7 +1924,7 @@ En général : < 1s, mais peut atteindre plusieurs secondes ou minutes.
 
 ---
 
-- Tous les réplicas **finiront par converger**,  
+- Tous les réplicas **finiront par converger**,
   mais sans garantie sur **quand**
 - Terme popularisé par Douglas Terry et Werner Vogels.
 
@@ -1934,9 +1934,9 @@ Le *replication lag* est généralement < 1s, s'il devient plus long → problè
 
 ## Trois problèmes typiques
 
-* **Read-Your-Writes** inconsistency  
-* **Monotonic Reads** violation  
-* **Consistent Prefix Reads** violation  
+* **Read-Your-Writes** inconsistency
+* **Monotonic Reads** violation
+* **Consistent Prefix Reads** violation
 
 ---
 
@@ -1990,7 +1990,7 @@ Nous avons besoin de cohérence : *read-after-write* ou encore *read-your-write*
 
 ## Exemple
 
-> L’utilisateur voit d’abord un nouveau commentaire apparaître,  
+> L’utilisateur voit d’abord un nouveau commentaire apparaître,
 > puis disparaître lors d’un rafraîchissement.
 
 > **Garantie monotonic read**
@@ -2007,8 +2007,8 @@ Nous avons besoin de cohérence : *read-after-write* ou encore *read-your-write*
 
 ## Solutions
 
-- Associer chaque utilisateur à **un même replica** :  
-  - ex. hash sur l’ID utilisateur.  
+- Associer chaque utilisateur à **un même replica** :
+  - ex. hash sur l’ID utilisateur.
 - Si le replica échoue → basculer vers un autre plus à jour.
 
 ---
@@ -2018,8 +2018,8 @@ Nous avons besoin de cohérence : *read-after-write* ou encore *read-your-write*
 
 ### mise en situation
 
-**Mr. Poons :** “How far into the future can you see?”  
-**Mrs. Cake :** “About ten seconds, Mr. Poons.”  
+**Mr. Poons :** “How far into the future can you see?”
+**Mrs. Cake :** “About ten seconds, Mr. Poons.”
 → Sur un follower lent : la réponse arrive avant la question.
 
 ---
@@ -2034,8 +2034,8 @@ Nous avons besoin de cohérence : *read-after-write* ou encore *read-your-write*
 
 ## Consistent Prefix Reads
 
-> En cas de causalité, les écritures doivent toujours être lues dans l'ordre temporel.  
->  
+> En cas de causalité, les écritures doivent toujours être lues dans l'ordre temporel.
+>
 > Si A précède B, on ne peut pas lire B avant A.
 
 Difficile à garantir lorsqu'il y a **plusieurs partitions (leader)** :
@@ -2307,7 +2307,7 @@ Réplication sans leader.
 
 - Avec un ou plusieurs leader, on doit attendre un failover (reprise du leader).
 - Sans leader (exemple 3 réplicas)
-   - le client écrit en **parallèle** aux 3.  
+   - le client écrit en **parallèle** aux 3.
    - Si 1 réplique est indisponible, **2 réplicas** réponde **ok**.
    - Le nœud en retard lira ensuite une **valeur obsolète** → besoin de **réparation**.
 
@@ -2686,7 +2686,7 @@ Il nous faut un algorithme pour déterminer si deux opérations sont concurrente
    Version vector : { A: 0, B: 1, C: 0 }
    > Ces deux écritures sont concurrentes, car :
    >  A ne connaît pas la mise à jour de B
-   >  
+   >
    >  B ne connaît pas celle de A
    >  → aucun des deux vecteurs ne “domine” l’autre.
 ---
@@ -2717,12 +2717,12 @@ Il nous faut un algorithme pour déterminer si deux opérations sont concurrente
 
 ## Pourquoi répliquer les données ?
 
-- 🔥 **Haute disponibilité** → le système continue même si un nœud (ou un datacenter) tombe.  
-- 📱 **Opération déconnectée** → permettre à une appli de fonctionner sans connexion réseau.  
-- 🌍 **Latence réduite** → placer les données plus près géographiquement des utilisateurs.  
+- 🔥 **Haute disponibilité** → le système continue même si un nœud (ou un datacenter) tombe.
+- 📱 **Opération déconnectée** → permettre à une appli de fonctionner sans connexion réseau.
+- 🌍 **Latence réduite** → placer les données plus près géographiquement des utilisateurs.
 - 📈 **Scalabilité** → répartir les lectures sur plusieurs répliques pour soulager la charge.
 
-> *Objectif simple* : plusieurs copies cohérentes des mêmes données.  
+> *Objectif simple* : plusieurs copies cohérentes des mêmes données.
 > *Réalité* : problèmes de concurrence, retards, pannes et synchronisation complexes.
 
 ---
@@ -2735,7 +2735,7 @@ Il nous faut un algorithme pour déterminer si deux opérations sont concurrente
 | 🟧 **Multi Leader** | Plusieurs leaders acceptent des écritures, se synchronisent | Tolérance aux pannes, utile multi-datacenter | ⚠️ Conflits d’écriture possibles |
 | 🟥 **Leaderless** | Tous les nœuds peuvent recevoir des écritures | Très disponible, pas de failover | Cohérence faible, détection/merge de conflits |
 
-> La **synchronicité** (synchronous vs asynchronous) influence directement  
+> La **synchronicité** (synchronous vs asynchronous) influence directement
 > la cohérence et la perte potentielle de données en cas de panne.
 
 ---
@@ -2765,12 +2765,12 @@ Partitionnement (sharding)
 
 # Introduction
 
-Dans le chapitre précédent, nous avons vu **la réplication** :  
+Dans le chapitre précédent, nous avons vu **la réplication** :
 
 > **Réplication**
 > Plusieurs copies des mêmes données sur plusieurs nœuds.
 
-Mais pour des **très grands volumes** ou une **forte charge de requêtes**, la réplication ne suffit plus :  
+Mais pour des **très grands volumes** ou une **forte charge de requêtes**, la réplication ne suffit plus :
 
 > → il faut **découper les données** en *partitions* (aussi appelées *shards*).
 
@@ -2778,11 +2778,11 @@ Mais pour des **très grands volumes** ou une **forte charge de requêtes**, la 
 
 ## Qu’est-ce qu’une partition ?
 
-- Chaque donnée (ligne, document, enregistrement) 
+- Chaque donnée (ligne, document, enregistrement)
   appartient **à une seule partition**.
 
-- Une partition = un *mini-database* autonome  
-  (mais le système peut exécuter des opérations sur plusieurs partitions).
+- Une partition = une *mini-database*
+  (mais le système supporte des opérations sur plusieurs partitions).
 
 ---
 
@@ -2791,16 +2791,16 @@ Mais pour des **très grands volumes** ou une **forte charge de requêtes**, la 
 
 > Différentes partitions peuvent être placées sur différents nœuds dans un cluster.
 
-- Répartir les données sur plusieurs disques / machines  
-- Répartir la charge de requêtes sur plusieurs processeurs  
+- Répartir les données sur plusieurs disques / machines
+- Répartir la charge de requêtes sur plusieurs processeurs
 - Permettre à chaque nœud de traiter **indépendamment** les requêtes d’une partition.
 
 ---
 
 ## Pourquoi partitionner ?
 
-- Un seul serveur ne suffit plus  
-  - stockage trop grand  
+- Un seul serveur ne suffit plus
+  - stockage trop grand
   - trop de requêtes par seconde
 
 - Les partitions permettent :
@@ -2809,7 +2809,7 @@ Mais pour des **très grands volumes** ou une **forte charge de requêtes**, la 
   - Scalabilité en **stockage**
   - Possibilité de paralléliser certaines requêtes (analytique)
 
-📌 Utilisé depuis les années 80 (Teradata, NonStop SQL)  
+📌 Utilisé depuis les années 80 (Teradata, NonStop SQL)
 📌 Massivement repris dans NoSQL & data warehouses modernes
 
 ---
@@ -2818,22 +2818,22 @@ Mais pour des **très grands volumes** ou une **forte charge de requêtes**, la 
 
 Dans ce chapitre :
 
-1. **Stratégies de partitionnement d'un grand ensemble de donnée**  
-   - Range partitioning  
-   - Hash partitioning  
-   - Partitionnement des index  
+1. **Stratégies de partitionnement d'un grand ensemble de donnée**
+   - Range partitioning
+   - Hash partitioning
+   - Partitionnement des index
 
-2. **Rebalancing**  
-   - Comment déplacer les partitions  
-   - Ajout / suppression de nœuds  
+2. **Rebalancing**
+   - Comment déplacer les partitions
+   - Ajout / suppression de nœuds
 
-3. **Request Routing**  
+3. **Request Routing**
    - Comment savoir quel nœud contient quelle partition ?
 
 ---
 
 <!-- _class: transition3 -->
-I. Partitionnement et réplication  
+I. Partitionnement et réplication
 
 ---
 
@@ -2841,9 +2841,9 @@ I. Partitionnement et réplication
 
 Le partitionnement est **souvent combiné** avec la réplication :
 
-- Chaque partition est stockée **sur plusieurs nœuds**  
-  → pour une meilleure tolérance aux pannes  
-- Même si une donnée appartient à **une seule partition**,  
+- Chaque partition est stockée **sur plusieurs nœuds**
+  → pour une meilleure tolérance aux pannes
+- Même si une donnée appartient à **une seule partition**,
   elle existe **en plusieurs copies**.
 
 > **Un nœud peut contenir plusieurs partitions**.
@@ -2854,13 +2854,13 @@ Le partitionnement est **souvent combiné** avec la réplication :
 
 Si on utilise un modèle **leader–follower** :
 
-- Chaque partition a **un leader** sur un nœud  
-- Et **des followers** sur d’autres nœuds  
+- Chaque partition a **un leader** sur un nœud
+- Et **des followers** sur d’autres nœuds
 - Un même nœud peut être :
   - leader pour certaines partitions
   - follower pour d’autres
 
-📌 Tous les concepts du chapitre 5 sur la réplication s’appliquent aussi ici.  
+📌 Tous les concepts du chapitre précédent sur la réplication s’appliquent aussi ici.
 🗒️ Pour simplifier, la suite du chapitre ignore la réplication.
 
 ---
@@ -2880,13 +2880,16 @@ II. Sharding de donnée type clé-valeur
 ---
 
 ## Comment partitionner ?
+
+Bien partitionner équivaut à
+
 - Répartir **équitablement** les données et la charge
-- Éviter qu’un nœud devienne le goulot d’étranglement  
+- Éviter qu’un nœud devienne le goulot d’étranglement
   → phénomène de **skew** (déséquilibre)
 - Un partition très sollicitée = **hot spot**
 
 ## 💡 Idée
-Répartir les clés **aléatoirement** ❌  
+Répartir les clés **aléatoirement** ❌
 → bonne répartition, mais impossible de savoir où lire → requêtes broadcast (requêtes envoyées en parallèle à tous les nœuds).
 
 ---
@@ -2903,7 +2906,7 @@ Répartir les clés **aléatoirement** ❌
 
 ## Principe
 
-- Chaque partition couvre une **plage continue de clés**  
+- Chaque partition couvre une **plage continue de clés**
    - ex. « de A à C », « de C à F », etc.
 - Analogie : les volumes d’une **encyclopédie papier**
 - Si les limites des plages sont connues :
@@ -2916,7 +2919,7 @@ Répartir les clés **aléatoirement** ❌
 
 - Les données réelles **ne sont pas uniformes**
 - Exemple :
-  - « A » et « B » ont énormément de mots  
+  - « A » et « B » ont énormément de mots
   - « X », « Y », « Z » en ont très peu
 - Si on découpait naïvement « 2 lettres par tome »,  
   → certains volumes seraient énormes  
@@ -2928,7 +2931,7 @@ Répartir les clés **aléatoirement** ❌
 
 ---
 
-## ✅ Avantages du Key Range Partitioning
+## ✅ Avantages du partitionnement par plage de clés
 
 Dans chaque partition, les clés sont **triées**. Pratique pour : 
 
@@ -2976,15 +2979,14 @@ Effets :
 
 # Partitionnement par hashage de clé
 
-*Motivation :* éviter les **hot spots** présents avec le partitionnement par range.
+*Motivation :* éviter les **hot spots** présents avec le partitionnement par plage.
 
 💡 Idée : appliquer une **fonction de hachage** à la clé  
-→ transforme une distribution déséquilibrée  
-→ en distribution **uniforme** sur un grand espace numérique.
+> transforme une distribution déséquilibrée en distribution **uniforme** sur un grand espace numérique.
 
 **Exemple :**
 Un hash 32-bit → nombre entre 0 et 2<sup>32</sup>−1  
-→ même si les chaînes sont proches, leurs hash sont "aléatoires".
+→ même si les chaînes sont proches, leur hash sont "aléatoires".
 
 ---
 
@@ -3014,14 +3016,14 @@ Un hash 32-bit → nombre entre 0 et 2<sup>32</sup>−1
 
 ## Perte des capacités de Range Scans
 
-Avec Hash Partitioning :
-- Des clés proches → hash complètement différents
-- Elles se retrouvent dans **des partitions différentes**
-- L’ordre naturel est **perdu**
+Avec le partitionnement par hash :
+- Des clés proches donnent des hash complètement différents.
+- Elles se retrouvent donc dans **des partitions différentes**.
+- L’ordre naturel est **perdu**.
 
 Conséquences :
-- Requêtes de plages → doivent interroger **toutes les partitions**
-- ⇒ ❌ Impossible d’effectuer un range scan efficace
+- Requêtes de plages → doivent interroger **toutes les partitions**.
+- ⇒ ❌ Impossible d’effectuer un range scan efficace.
 
 Exemples :
 - MongoDB (mode hashed) → range query envoyé sur tous les nœuds
@@ -3048,7 +3050,7 @@ Clé primaire :
 `(user_id, update_timestamp)`
 
 Résultat :
-- Tous les posts d’un user → même partition
+- Tous les posts d’un utilisateur sont sur la même partition
 - Ordonnés par timestamp → parfait pour naviguer dans l’historique
 - Accès rapide :
   - "Derniers posts"
@@ -3061,20 +3063,232 @@ Partitionnement :
 
 # Charge déséquilibrée & Hot Spots
 
-- Même avec un **partitionnement par hash**, certains scénarios créent des **hot spots**.  
-- Exemple : un utilisateur célèbre déclenche  
+- Même avec un **partitionnement par hash**, certains scénarios créent des **hot spots**.
+- Exemple : un utilisateur célèbre déclenche
   énormément de lectures/écritures sur *une seule clé*.
-- Résultat → toutes les requêtes convergent vers **la même partition** → surcharge.
+- Résultat : toutes les requêtes convergent vers **la même partition** → surcharge.
 
 ---
+
+- Le hash **uniformise la distribution des clés**,  
+  **pas** le volume **d’accès par clé**.
+- Si toutes les écritures touchent la même clé :
+  - le hash produit toujours la **même valeur**
+  - → la même partition est sollicitée
+  - → apparition d’un **hot spot**
+- Cas typiques :
+  - Fil d’actualité d’un influenceur
+  - Publication « viral »
+  - Ressource fréquemment mise à jour
+
+---
+
+## Techniques pour réduire les hot spots
+
+### Partitionnement artificiel d’une hot key
+
+- Ajouter un **suffixe/préfixe aléatoire**  
+  Ex. `user123:xx` (<span class="math">xx ∈ [00–99]</span>)
+- Répartit les écritures sur **100 partitions** au lieu d’une.
+
+### Inconvénients
+
+- Les lectures deviennent plus complexes :
+  - lire `user123:*`
+  - agréger les résultats  
+- Nécessite du **bookkeeping** :
+  - seules les quelques clés "chaudes" doivent être réparties
+  - suivre quelles clés ont été divisées
+
+---
+
+> ⚠️ Implémentation dans l'application
+> - Les systèmes distribué actuels ne savent **pas** détecter automatiquement les clés chaudes.  
+>   → Ce découpage est un compromis à faire dans **l’application**.
+
+---
+
 
 <!-- _class: transition3 -->
 III. Partitionnement et index secondaires
 
 ---
 
+# Une clé c'est bien mais...
+
+- Jusqu’ici : modèle **key–value**
+  → une donnée associée à une clé unique « primaire ».
+- Simple et efficace :
+  - Trouver la partition = appliquer la fonction de partitionnement - **f(clé)**
+  - Les lectures/écritures vont directement au bon nœud.
+- Fonctionne parfaitement tant que **toutes les requêtes utilisent la clé primaire**.
+- Problème : les applications réelles interrogent *aussi* les données sur d’autres critères...
+
+---
+
+## Quand arrivent les index secondaires
+
+- Un **index secondaire** n’identifie PAS un enregistrement unique,
+   > Plutôt une manière de chercher les occurrences d'une valeur particulière :
+  - Trouver toutes les actions de l'utilisateur `use:123`
+  - Trouver les articles contenant « he2b»
+  - Trouver toutes les voitures rouges
+
+- Ils sont inévitables :
+  - coeur du relationnelles,
+  - fréquent en bases de donnée type document,
+  - certains ne l'ont pas implémenté au départ, mais l'ont fait par la suite (Riak),
+  - raison d'être des moteurs de recherche (Elasticsearch, [Solr](https://solr.apache.org/)).
+
+---
+
+- ⚠️ **Problème majeur** :
+  Les valeurs d’un index secondaire ne correspondent **pas** aux limites de partition.
+
+- Deux stratégies possibles :
+  1. **Index local (document-based)**
+  2. **Index global (term-based)**
+
+  → Analysons ces deux approches.
+
+---
+
+# Partitionnement d'index secondaire par document (index local)
+
+### Principe
+- Chaque document possède un **ID unique**  
+- la partition est déterminée **par ce document ID**.
+- Chaque partition :
+  - stocke ses propres documents
+  - **maintient un index secondaire local (qui lui est propre)**
+
+---
+
+<center>
+
+![h:450](./img/partitioning_sec-index_local.png)
+</center>
+
+> Index `color:red` contient **uniquement** les IDs présents dans les partitions respectives ⇒ indépendance des index.
+
+---
+
+## ✔ Avantages
+- Une écriture → touche **une seule partition**
+  - ajout / update / delete d'un document efficace
+- Pas de coordination inter-nœuds
+- Très utilisé :
+  - MongoDB, Riak, Cassandra, Elasticsearch, SolrCloud, VoltDB
+
+---
+
+## ❌ Limites (majeures)
+- Les documents correspondant à un critère (ex. voitures rouges)
+  **peuvent être répartis sur plusieurs partitions**.
+- Une lecture sur un index secondaire nécessite :
+  > **scatter/gather**
+  > C'est-à-dire : envoyer de la requête à toutes les partitions et agrégation des réponses.
+- Effets négatifs :
+  - coût en réseau élevé
+  - amplification de latence (“tail latency”)
+
+---
+
+## Tail latency
+
+<center>
+
+![h:320](./img/tail-latency.png)
+</center>
+
+Quand une requête utilisateur nécessite **plusieurs appels backend** :
+
+- Tu lances les appels **en parallèle** ✔️
+- Mais… la réponse finale **attend le plus lent** ❌
+- Il suffit d'une seule requête lente pour rendre la requête globale lente.
+
+---
+
+Recommandation des « vendeurs» d'organiser le schéma de partitionnement (choix des clés, clés hashé...) de manière à éviter le scatter/gather.
+
+> [MongoDB](https://www.mongodb.com/docs/manual/core/sharding-troubleshooting-shard-keys/)
+> If you are noticing decreased query performance over time, it is possible that your cluster is performing scatter-gather queries.
+> ...
+> If you do not include the shard key in your most common queries, it is possible that you could increase performance by [resharding your collection](https://www.mongodb.com/docs/manual/core/sharding-reshard-a-collection/#std-label-sharding-resharding). For advice on choosing a shard key see [Choose a Shard Key](https://www.mongodb.com/docs/manual/core/sharding-choose-a-shard-key/#std-label-sharding-shard-key-selection).
+
+⚠️ Pas toujours possible, en particulier lors de recherche sur plusieurs index secondaires.
+> Ex : filtre de voiture par couleur et marque.
+
+---
+
+# Partitionnement d'index secondaire par terme (global)
+
+---
+
+## 🔍 Pourquoi un index global ?
+
+Au lieu que chaque partition maintienne son propre index secondaire (**local index**),
+on peut créer un **index global**, partagé par toutes les partitions.
+
+Mais cet index global doit aussi être **partitionné**, sinon il devient un goulot d'étranglement.
+
+> L'index se retrouve sur différents noeuds. À la différence d'un index local, on sait quelle partition contacter.
+
+---
+
+## Comment ça fonctionne ?
+
+- Les documents sont partitionnés selon leur **primary key**.
+- Les **termes d’index** (ex. `color:red`, `make:toyota`) sont, eux, partitionnés différemment.
+- Le terme détermine la partition :
+  - par *range* (A–R → partition 0, S–Z → partition 1)  
+  - ou par *hash du terme* (répartition plus uniforme)
+
+> **Partitionnement par terme**
+> Le terme recherché dirige la requête vers la partition contenant l’index.
+
+---
+
+<center>
+
+![h:400](./img/partitioning_sec-index_global.png)
+</center>
+
+---
+
+## Avantage principal : Lecture efficace
+
+Une requête comme **"voitures rouges"** interroge :
+- **une seule partition d’index**,  
+- au lieu de faire un *scatter/gather* sur toutes les partitions du cluster.
+
+---
+
+## ⚠️ Inconvénients importants
+
+### I. Écritures plus complexes et plus lente
+
+Un seul document peut avoir plusieurs termes 
+   → une mise à jour doit toucher **plusieurs partitions d’index**.
+
+---
+
+### II. Pas de transaction distribuée (synchrone) → index parfois en retard
+<!-- transaction distribuée : veiller à ce que toutes les partitions concernées soit mise à jour ou non -->
+
+Pour être parfaitement à jour, il faudrait une transaction distribuée entre toutes les partitions concernées—mais **ce n’est pas supporté par beaucoup de systèmes**.
+
+Résultat :
+- Mises à jour souvent **asynchrones**
+- Index global parfois en **retard** après un write
+
+> Exemple réel : DynamoDB indique que ses Global Secondary Indexes peuvent subir des retards en cas de charge élevée.
+
+---
+
 <!-- _class: transition3 -->
 IV. Rééquilibrage de partition (rebalancing)
+
 
 ---
 
