@@ -8,6 +8,8 @@ Characters
 ↗ &#x2197; augmentation
 ↘ &#x2198; diminution
 
+↔ &#8596;
+
 ≤ ≥
 
 ≠ différent

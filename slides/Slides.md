@@ -3289,7 +3289,295 @@ Résultat :
 <!-- _class: transition3 -->
 IV. Rééquilibrage de partition (rebalancing)
 
+---
 
+### Pourquoi rééquilibrer un cluster ?
+
+Au fil du temps, les choses changent dans une base de donnée :
+- 📈 Le **trafic augmente** → besoin de plus de CPU  
+- 💾 Le **volume de données grandit** → besoin de plus de stockage  
+- 💥 Une **machine tombe en panne** → d’autres doivent prendre le relais  
+
+> *Rééquilibrage (Rebalancing)*
+> Le système doit **déplacer des données et des requêtes** entre nœuds
+
+---
+
+## Objectifs d’un bon rééquilibrage
+
+Un rééquilibrage correct doit garantir :
+
+### ✔️ 1. Une répartition équitable de la charge
+- Le stockage, les lectures et écritures doivent être **uniformément distribués**  
+- Aucun nœud ne doit devenir un **goulot d’étranglement**.
+
+### ✔️ 2. Une disponibilité continue
+- Pendant l'opération de rééquilibrage, la base de donnée doit continuer à accepter les requêtes de lecture et d'écriture.
+
+---
+
+### ✔️ 3. Un mouvemement minimal des données
+- Ne déplacer **que ce qui est nécessaire**  
+- Réduire :
+  - ⏱️ le temps de migration  
+  - 🌐 le trafic réseau  
+  - 💽 l’I/O disque  
+
+---
+
+# Stratégies de rééquilibrage
+
+---
+
+## Stratégie 1. Ce qu'il ne faut pas faire
+
+### 1 partition pour 1 noeud
+Une idée intuitive : *Attribuer une clé à un nœud/partition via*  
+
+`Partition = hash(key) mod N` (où **N = nombre de nœuds**)
+
+✔️ Simple  
+✔️ Équilibré... jusqu'à ce que **N change** 😨
+
+---
+
+### ⚠️ Changer N (nombre de nœuds) casse tout
+
+Si le nombre de nœuds change, **toutes les partitions changent aussi**.
+
+Exemple avec `hash(key) = 123456` :
+
+<div class="columns">
+<div>
+
+#### 2 noeuds/partitions
+  |n1|n2|
+  |---|---|
+  |hash(key) = 12346|hash(key) = 12345|
+  |hash(key) = 12340|hash(key) = 12341|
+
+</div>
+<div>
+
+#### 3 noeuds/partitions
+  |n1|n2|n3|
+  |---|---|---|
+  |hash(key) = 12345|hash(key) = 12346||
+  ||hash(key) = 12340|hash(key) = 12341|
+</div>
+</div>
+
+---
+
+## Stratégie 2 - Nombre de partition fixe
+
+> **Idée clé :**  
+> Créer **beaucoup plus de partitions que de nœuds**,  
+> puis répartir ces partitions entre les nœuds.
+
+Exemple :  
+- 10 nœuds  
+- 1 000 partitions  
+- ⇒ environ 100 partitions par nœud
+
+---
+
+### Quand un **nouveau nœud** arrive
+
+- Il prend quelques partitions à chaque nœud existant  
+- Jusqu’à atteindre une répartition équilibrée
+
+- **Seules des partitions entières sont déplacées**, pas les clés individuellement  
+
+---
+
+<center>
+
+![h:500](./img/rebalancing_fix-number-partition.png)
+</center>
+
+---
+
+### Suppression d’un nœud
+
+Si un nœud disparaît :
+
+- Ses partitions sont **réassignées** aux autres nœuds  
+- Toujours sans modifier les règles de partitionnement
+
+> Le *mapping* clé &#8596; partition reste **inchangé**  
+> ⇒ On ne déplace que **les partitions** (pas les clés dans les partitions).
+
+---
+
+### Flexibilité matérielle
+
+On peut attribuer plus de partitions aux nœuds :
+
+- plus puissants et/ou
+- ayant plus de RAM et/ou
+- ayant plus de stockage.
+
+> Permet donc un cluster hétérogène sans difficulté.
+
+---
+
+### Utilisé par…
+
+✔️ Riak  
+✔️ Elasticsearch  
+✔️ Couchbase  
+✔️ Voldemort  
+
+Ces systèmes reposent sur un **nombre fixe de partitions** créé dès le départ.
+
+> ⚠️ Le nombre de partition est fixé lors de la configuration *initiale*. Si la fission de partition est possible, les différents sgbd choisissent généralement de ne pas le faire.
+
+---
+
+### 🤯 Choisir le bon nombre de partitions
+
+C’est un compromis :
+
+- Trop **peu** de partitions → partitions énormes → rebalancing coûteux  
+- Trop de partitions → surcharge administrative → overhead mémoire/CPU
+
+Le juste milieu dépend :  
+- du volume total de données,
+- de la vitesse de croissance,
+- de la taille moyenne souhaitée par partition.
+
+---
+
+## Stratégie 3 - partitionnement dynamique
+
+### Pourquoi en a-t-on besoin ?
+
+Quand on partitionne **par plages de clés**, fixer les partitions à l’avance pose problème :
+
+- **Mauvaises limites = partitions déséquilibrées**  
+  → risque d’avoir *toutes* les données dans une seule partition.
+
+- Reconfigurer les limites **manuellement** est très lourd.
+
+---
+
+Les systèmes comme **HBase**, **RethinkDB** ou **MongoDB** créent et réajustent les partitions automatiquement :
+
+- **Split** :  
+  Si une partition dépasse une taille (ex : 10 GB), elle est coupée en deux  
+  `P → P1 + P2`.
+
+- **Merge** :  
+  Si elle devient trop petite, elle peut être fusionnée  
+  `P1 + P2 → P`.
+
+---
+
+### Avantages
+
+- Le nombre de partitions **s’adapte au volume de données**.  
+- Les partitions restent de taille raisonnable.  
+- Le système maintient un bon équilibrage des charges.
+
+---
+
+### Assignation des partitions
+
+- Chaque partition est **assignée à un nœud**.  
+- Un nœud peut gérer **plusieurs partitions**.  
+- Après un split, on peut déplacer une moitié vers un autre nœud pour équilibrer.
+
+---
+
+### Limite importante
+
+Au démarrage :
+
+- Une base vide commence avec **une seule partition**  
+  → **un seul nœud** reçoit tout le trafic au début.
+
+**Solution** : Pre-splitting
+
+Configurer *à l’avance* plusieurs partitions vides  
+→ mais nécessite de connaître la **distribution prévue des clés**.
+
+---
+
+## Pour quel type de partitionnement ?
+
+- ✔️ partitionnement par plage de clé
+- ✔️ partitionnement par hash
+
+> MongoDB depuis la v2.4 permet le splitting dans les deux cas.
+
+---
+
+## Stratégie 4 - partitionnement proportionnellement aux noeuds
+
+> **Idée générale**
+> On définit **un nombre fixe de partitions par nœud**.  
+Ainsi :
+
+- Le nombre total de partitions **augmente quand on ajoute des nœuds**.
+- La taille d’une partition reste **globalement stable**.
+- La répartition de charge s’ajuste automatiquement à l’échelle du cluster.
+
+### Utilisé par
+
+- **Cassandra** (≈ 256 partitions/nœud)
+- **Ketama** (lib de consistent hashing)
+
+---
+
+### Quand un nœud rejoint le cluster
+
+1. Le nœud choisit **au hasard** un ensemble de partitions existantes.
+2. Pour chacune :  
+   il **split** la partition en deux.
+3. Il **prend la moitié** des partitions splitées.
+4. L’autre moitié reste sur les nœuds d’origine.
+
+Cela permet au nouveau nœud de récupérer une **part équitable** de la charge.
+
+>### 🎲 Pourquoi aléatoire ?  
+>Pour éviter des choix biaisés → en moyenne, les splits donnent une répartition juste.  
+> Cassandra 3.0 introduit un algorithme amélioré pour éviter les “unfair splits”.
+
+---
+
+# Opération automatique ou rééquilibrage manuel
+
+## Deux approches possibles
+
+### **1) Rééquilibrage manuel**
+
+- assignation des partitions explicitement configuré par un admin.
+- change uniquement quand l'admin le reconfigure.
+
+Dans les fait, le système suggère automatiquement une assignation de partition qui doit être validé par l'admin.
+
+---
+
+### **2) rééquilibrage automatique**
+- Le système décide *seul* quand déplacer des partitions.
+- → Très pratique, peu d’intervention humaine.  
+- le rééquilibrage est couteux :
+  - rerouting des requêtes
+  - Déplacement massif de données  
+  - ⇒ risque de :
+    - surcharge réseau
+    - dégradation de performance des autres requêtes.
+
+---
+
+### Exemple de danger : **automatisme + détection de panne**
+> un nœud devient lent → le cluster croit qu’il est “mort”  
+→ déclenche un rééquilibrage automatique  
+→ encore plus de charge sur le nœud lent  
+→ surcharge globale → **effet boule de neige (cascading failure)**
+
+> Privilégier l'intervention/le contrôle humain.
 ---
 
 <!-- _class: transition3 -->
