@@ -2921,9 +2921,9 @@ Répartir les clés **aléatoirement** ❌
 - Exemple :
   - « A » et « B » ont énormément de mots
   - « X », « Y », « Z » en ont très peu
-- Si on découpait naïvement « 2 lettres par tome »,  
-  → certains volumes seraient énormes  
-  → d’autres presque vides  
+- Si on découpait naïvement « 2 lettres par tome »,
+  → certains volumes seraient énormes
+  → d’autres presque vides
   → donc **mauvaise répartition de la charge**
 
 > 📌 **adapter les plages aux données réelles**
@@ -2938,11 +2938,11 @@ Dans chaque partition, les clés sont **triées**. Pratique pour :
 ### Range scans
 
   > **Exemples :** 
-  > - Rechercher toutes les mesures d’un ensemble de capteurs entre  
+  > - Rechercher toutes les mesures d’un ensemble de capteurs entre
   >    `2025-01-01 00:00` et `2025-01-31 23:59`.
   > - **Index concaténé**
   >   Le clé elle-même sert d'index multi-colonnes pour récupérer des enregistrements liés en 1 requête.
-  
+
 Cas d'utilisation :
 - Séries temporelles (logs, événement ordonnées),
 - données liées...
@@ -2955,7 +2955,6 @@ Si la clé = timestamp :
 - Les écritures arrivent *en temps réel*
 - Donc **toujours dans la même plage**
 - Donc **toujours dans la même partition**
-  
 > **Conséquence :** 
 > - une partition surchargée (« hot spot ») 🐜,
 > - les autres restent presque inactives 🦗.
@@ -2966,13 +2965,13 @@ Si la clé = timestamp :
 
 Ne pas utiliser directement le timestamp comme clé.
 
-### Ex : capteurs IoT  
+### Ex : capteurs IoT
 ❌ clé = `2025-11-19T10:12:53` → même partition
 ✔️ clé = `capteur42:2025-11-19T10:12:53`
 
 Effets :
 - Partitionnement par **sensor_id** → répartition équilibrée
-- Tri secondaire par timestamp → range scans encore possibles  
+- Tri secondaire par timestamp → range scans encore possibles
   (1 requête par capteur, mais parfaitement scalable)
 
 ---
@@ -2981,11 +2980,11 @@ Effets :
 
 *Motivation :* éviter les **hot spots** présents avec le partitionnement par plage.
 
-💡 Idée : appliquer une **fonction de hachage** à la clé  
-> transforme une distribution déséquilibrée en distribution **uniforme** sur un grand espace numérique.
+💡 Idée : appliquer une **fonction de hachage** à la clé
+> Transforme une distribution déséquilibrée en distribution **uniforme** sur un grand espace numérique.
 
 **Exemple :**
-Un hash 32-bit → nombre entre 0 et 2<sup>32</sup>−1  
+Un hash 32-bit → nombre entre 0 et 2<sup>32</sup>−1
 → même si les chaînes sont proches, leur hash sont "aléatoires".
 
 ---
@@ -3040,13 +3039,13 @@ Cassandra utilise une **clé primaire composée** :
 - Seul `partition_key` est hashé pour déterminer la partition
 
 - Les autres colonnes
-  → sont stockées **triées** dans la partition  
-  → permettent des **range scans efficaces**  
+  → sont stockées **triées** dans la partition
+  → permettent des **range scans efficaces**
 
 ---
 ## Utilisation type d'une clé primaire composée : flux d’activité / réseaux sociaux
 
-Clé primaire :  
+Clé primaire :
 `(user_id, update_timestamp)`
 
 Résultat :
@@ -3070,7 +3069,7 @@ Partitionnement :
 
 ---
 
-- Le hash **uniformise la distribution des clés**,  
+- Le hash **uniformise la distribution des clés**,
   **pas** le volume **d’accès par clé**.
 - Si toutes les écritures touchent la même clé :
   - le hash produit toujours la **même valeur**
@@ -3087,7 +3086,7 @@ Partitionnement :
 
 ### Partitionnement artificiel d’une hot key
 
-- Ajouter un **suffixe/préfixe aléatoire**  
+- Ajouter un **suffixe/préfixe aléatoire**
   Ex. `user123:xx` (<span class="math">xx ∈ [00–99]</span>)
 - Répartit les écritures sur **100 partitions** au lieu d’une.
 
@@ -3095,15 +3094,14 @@ Partitionnement :
 
 - Les lectures deviennent plus complexes :
   - lire `user123:*`
-  - agréger les résultats  
+  - agréger les résultats
 - Nécessite du **bookkeeping** :
-  - seules les quelques clés "chaudes" doivent être réparties
-  - suivre quelles clés ont été divisées
+  - suivre les quelques clés "chaudes" qui ont été divisées
 
 ---
 
 > ⚠️ Implémentation dans l'application
-> - Les systèmes distribué actuels ne savent **pas** détecter automatiquement les clés chaudes.  
+> - Les systèmes distribué actuels ne savent **pas** détecter automatiquement les clés chaudes.
 >   → Ce découpage est un compromis à faire dans **l’application**.
 
 ---
@@ -3156,7 +3154,7 @@ III. Partitionnement et index secondaires
 # Partitionnement d'index secondaire par document (index local)
 
 ### Principe
-- Chaque document possède un **ID unique**  
+- Chaque document possède un **ID unique**
 - la partition est déterminée **par ce document ID**.
 - Chaque partition :
   - stocke ses propres documents
@@ -3203,7 +3201,7 @@ III. Partitionnement et index secondaires
 
 Quand une requête utilisateur nécessite **plusieurs appels backend** :
 
-- Tu lances les appels **en parallèle** ✔️
+- Les appels sont appelés **en parallèle** ✔️
 - Mais… la réponse finale **attend le plus lent** ❌
 - Il suffit d'une seule requête lente pour rendre la requête globale lente.
 
@@ -3225,10 +3223,9 @@ Recommandation des « vendeurs» d'organiser le schéma de partitionnement (choi
 
 ---
 
-## 🔍 Pourquoi un index global ?
+## Pourquoi un index global ?
 
-Au lieu que chaque partition maintienne son propre index secondaire (**local index**),
-on peut créer un **index global**, partagé par toutes les partitions.
+> On peut créer un **index global**, partagé par toutes les partitions. Plutôt que d'avoir chaque partition qui maintient son propre index.
 
 Mais cet index global doit aussi être **partitionné**, sinon il devient un goulot d'étranglement.
 
@@ -3241,7 +3238,7 @@ Mais cet index global doit aussi être **partitionné**, sinon il devient un gou
 - Les documents sont partitionnés selon leur **primary key**.
 - Les **termes d’index** (ex. `color:red`, `make:toyota`) sont, eux, partitionnés différemment.
 - Le terme détermine la partition :
-  - par *range* (A–R → partition 0, S–Z → partition 1)  
+  - par *range* (A–R → partition 0, S–Z → partition 1)
   - ou par *hash du terme* (répartition plus uniforme)
 
 > **Partitionnement par terme**
@@ -3259,7 +3256,8 @@ Mais cet index global doit aussi être **partitionné**, sinon il devient un gou
 ## Avantage principal : Lecture efficace
 
 Une requête comme **"voitures rouges"** interroge :
-- **une seule partition d’index**,  
+- **une seule partition d’index**,
+- **récolte sur une partie des partitions**,
 - au lieu de faire un *scatter/gather* sur toutes les partitions du cluster.
 
 ---
@@ -3294,9 +3292,9 @@ IV. Rééquilibrage de partition (rebalancing)
 ### Pourquoi rééquilibrer un cluster ?
 
 Au fil du temps, les choses changent dans une base de donnée :
-- 📈 Le **trafic augmente** → besoin de plus de CPU  
-- 💾 Le **volume de données grandit** → besoin de plus de stockage  
-- 💥 Une **machine tombe en panne** → d’autres doivent prendre le relais  
+- 📈 Le **trafic augmente** → besoin de plus de CPU
+- 💾 Le **volume de données grandit** → besoin de plus de stockage
+- 💥 Une **machine tombe en panne** → d’autres doivent prendre le relais
 
 > *Rééquilibrage (Rebalancing)*
 > Le système doit **déplacer des données et des requêtes** entre nœuds
@@ -3308,7 +3306,7 @@ Au fil du temps, les choses changent dans une base de donnée :
 Un rééquilibrage correct doit garantir :
 
 ### ✔️ 1. Une répartition équitable de la charge
-- Le stockage, les lectures et écritures doivent être **uniformément distribués**  
+- Le stockage, les lectures et écritures doivent être **uniformément distribués**
 - Aucun nœud ne doit devenir un **goulot d’étranglement**.
 
 ### ✔️ 2. Une disponibilité continue
@@ -3317,11 +3315,11 @@ Un rééquilibrage correct doit garantir :
 ---
 
 ### ✔️ 3. Un mouvemement minimal des données
-- Ne déplacer **que ce qui est nécessaire**  
+- Ne déplacer **que ce qui est nécessaire**
 - Réduire :
-  - ⏱️ le temps de migration  
-  - 🌐 le trafic réseau  
-  - 💽 l’I/O disque  
+  - ⏱️ le temps de migration
+  - 🌐 le trafic réseau
+  - 💽 l’I/O disque
 
 ---
 
@@ -3332,11 +3330,11 @@ Un rééquilibrage correct doit garantir :
 ## Stratégie 1. Ce qu'il ne faut pas faire
 
 ### 1 partition pour 1 noeud
-Une idée intuitive : *Attribuer une clé à un nœud/partition via*  
+Une idée intuitive : *Attribuer une clé à un nœud/partition via*
 
 `Partition = hash(key) mod N` (où **N = nombre de nœuds**)
 
-✔️ Simple  
+✔️ Simple
 ✔️ Équilibré... jusqu'à ce que **N change** 😨
 
 ---
@@ -3369,25 +3367,25 @@ Exemple avec `hash(key) = 123456` :
 
 ---
 
-## Stratégie 2 - Nombre de partition fixe
+## Stratégie 2 - Nombre de partitions fixe
 
-> **Idée clé :**  
-> Créer **beaucoup plus de partitions que de nœuds**,  
+> **Idée clé :**
+> Créer **beaucoup plus de partitions que de nœuds**,
 > puis répartir ces partitions entre les nœuds.
 
-Exemple :  
-- 10 nœuds  
-- 1 000 partitions  
+Exemple :
+- 10 nœuds
+- 1 000 partitions
 - ⇒ environ 100 partitions par nœud
 
 ---
 
 ### Quand un **nouveau nœud** arrive
 
-- Il prend quelques partitions à chaque nœud existant  
+- Il prend quelques partitions à chaque nœud existant
 - Jusqu’à atteindre une répartition équilibrée
 
-- **Seules des partitions entières sont déplacées**, pas les clés individuellement  
+- **Seules des partitions entières sont déplacées**, pas les clés individuellement
 
 ---
 
@@ -3402,10 +3400,10 @@ Exemple :
 
 Si un nœud disparaît :
 
-- Ses partitions sont **réassignées** aux autres nœuds  
+- Ses partitions sont **réassignées** aux autres nœuds
 - Toujours sans modifier les règles de partitionnement
 
-> Le *mapping* clé &#8596; partition reste **inchangé**  
+> Le *mapping* clé &#8596; partition reste **inchangé**
 > ⇒ On ne déplace que **les partitions** (pas les clés dans les partitions).
 
 ---
@@ -3424,10 +3422,10 @@ On peut attribuer plus de partitions aux nœuds :
 
 ### Utilisé par…
 
-✔️ Riak  
-✔️ Elasticsearch  
-✔️ Couchbase  
-✔️ Voldemort  
+✔️ Riak
+✔️ Elasticsearch
+✔️ Couchbase
+✔️ Voldemort
 
 Ces systèmes reposent sur un **nombre fixe de partitions** créé dès le départ.
 
@@ -3439,10 +3437,10 @@ Ces systèmes reposent sur un **nombre fixe de partitions** créé dès le dépa
 
 C’est un compromis :
 
-- Trop **peu** de partitions → partitions énormes → rebalancing coûteux  
+- Trop **peu** de partitions → partitions énormes → rebalancing coûteux
 - Trop de partitions → surcharge administrative → overhead mémoire/CPU
 
-Le juste milieu dépend :  
+Le juste milieu dépend :
 - du volume total de données,
 - de la vitesse de croissance,
 - de la taille moyenne souhaitée par partition.
@@ -3455,8 +3453,9 @@ Le juste milieu dépend :
 
 Quand on partitionne **par plages de clés**, fixer les partitions à l’avance pose problème :
 
-- **Mauvaises limites = partitions déséquilibrées**  
+- **Mauvaises limites = partitions déséquilibrées**
   → risque d’avoir *toutes* les données dans une seule partition.
+  → Cela arrive de faire un mauvais choix 😢
 
 - Reconfigurer les limites **manuellement** est très lourd.
 
@@ -3464,28 +3463,28 @@ Quand on partitionne **par plages de clés**, fixer les partitions à l’avance
 
 Les systèmes comme **HBase**, **RethinkDB** ou **MongoDB** créent et réajustent les partitions automatiquement :
 
-- **Split** :  
-  Si une partition dépasse une taille (ex : 10 GB), elle est coupée en deux  
+- **Split** :
+  Si une partition dépasse une taille (ex : 10 GB), elle est coupée en deux
   `P → P1 + P2`.
 
-- **Merge** :  
-  Si elle devient trop petite, elle peut être fusionnée  
+- **Merge** :
+  Si elle devient trop petite, elle peut être fusionnée
   `P1 + P2 → P`.
 
 ---
 
 ### Avantages
 
-- Le nombre de partitions **s’adapte au volume de données**.  
-- Les partitions restent de taille raisonnable.  
+- Le nombre de partitions **s’adapte au volume de données**.
+- Les partitions restent de taille raisonnable.
 - Le système maintient un bon équilibrage des charges.
 
 ---
 
 ### Assignation des partitions
 
-- Chaque partition est **assignée à un nœud**.  
-- Un nœud peut gérer **plusieurs partitions**.  
+- Chaque partition est **assignée à un nœud**.
+- Un nœud peut gérer **plusieurs partitions**.
 - Après un split, on peut déplacer une moitié vers un autre nœud pour équilibrer.
 
 ---
@@ -3494,12 +3493,12 @@ Les systèmes comme **HBase**, **RethinkDB** ou **MongoDB** créent et réajuste
 
 Au démarrage :
 
-- Une base vide commence avec **une seule partition**  
+- Une base vide commence avec **une seule partition**
   → **un seul nœud** reçoit tout le trafic au début.
 
 **Solution** : Pre-splitting
 
-Configurer *à l’avance* plusieurs partitions vides  
+Configurer *à l’avance* plusieurs partitions vides
 → mais nécessite de connaître la **distribution prévue des clés**.
 
 ---
@@ -3515,8 +3514,10 @@ Configurer *à l’avance* plusieurs partitions vides
 
 ## Stratégie 4 - partitionnement proportionnellement aux noeuds
 
+<!-- Une dernière méthode pour la route... on en a vu assez. Celle-ci est présentée dans les grandes lignes pour complétude -->
+
 > **Idée générale**
-> On définit **un nombre fixe de partitions par nœud**.  
+> On définit **un nombre fixe de partitions par nœud**.
 Ainsi :
 
 - Le nombre total de partitions **augmente quand on ajoute des nœuds**.
@@ -3585,12 +3586,190 @@ V. Routing de requêtes
 
 ---
 
+# Comment le client trouve le bon nœud ?
+
+Une fois la base **partitionnée**, une question cruciale apparaît :
+
+> **Pour lire/écrire la clé "foo", à quelle adresse IP / port dois-je envoyer la requête ?**
+
+Comme les partitions sont **rebalancées**, l’emplacement d’une clé change →  
+il faut un mécanisme fiable pour trouver le bon nœud.
+
+---
+
+# Trois stratégies de routage des requêtes
+
+## **1) Le client contacte n’importe quel nœud**
+- Le nœud vérifie s’il possède la partition.
+   - Si oui → traite la requête.  
+   - Sinon → **forward** vers le bon nœud.
+
+Exemples : Cassandra, Riak (avec gossip).
+
+---
+
+## **2) Via un *routing tier* (proxy intelligent)**
+- Le client envoie toutes les requêtes au routeur.  
+- Le routeur connaît la localisation des partitions.  
+- Il **transfère la requête au bon nœud**.
+
+Exemples :  
+- MongoDB → `mongos`  
+- LinkedIn Espresso → Helix + ZooKeeper  
+- SolrCloud, Kafka → ZooKeeper
+
+---
+
+
+## **3) Client partition-aware**
+- Le client connaît lui-même la carte des partitions.  
+- Il se connecte **directement au bon nœud**.
+
+> Performant, mais plus complexe côté client.
+
+---
+
+<center>
+
+![](./img/sharding-query-routing.png)
+</center>
+
+---
+
+
+# Être d’accord sur l’état du cluster
+
+- Qui possède quelle partition ?  
+- Quel nœud vient de rejoindre / quitter le cluster ?  
+- Quelle partition vient d’être déplacée ?
+
+> Tous les acteurs doivent **partager la même vérité**.
+Sinon : erreurs de routage, partitions inaccessibles.
+
+Des protocoles de consensus existent, mais ils sont complexes
+
+---
+
+# Coordination 
+
+## Via ZooKeeper ou équivalent
+
+<div class="columns">
+<div>
+
+<center>
+
+![h:200](./img/Apache_ZooKeeper_logo.svg)
+</center>
+
+</div>
+<div>
+
+Beaucoup de systèmes utilisent un service de coordination externe (ex: [ZooKeeper](https://zookeeper.apache.org/)) :
+
+- Les nœuds s’enregistrent  
+- ZooKeeper maintient la **carte** des partitions  
+- Les routeurs / clients s’abonnent aux mises à jour  
+- Notification immédiate quand :  
+  - un nœud arrive ou disparaît  
+  - une partition change de propriétaire  
+
+</div>
+</div>
+
+---
+
+<center>
+
+![](./img/ZooKeeper-tracking-partition.png)
+</center>
+
+---
+
+## Alternative : Gossip protocol (pas de dépendance externe)
+
+Systèmes comme Cassandra et Riak :  
+- Les nœuds s’échangent des informations d’état en continu.  
+- Tout nœud peut recevoir une requête, puis la **redirige** localement.  
+- Pas besoin de ZooKeeper.
+
+> ✅ Simple à déployer  
+> ❌ Plus complexe et interne au SGBD
+
+---
+
 <!-- _class: transition3 -->
 VI. Résumé
 
 ---
 
+## Pourquoi
 
+- Stockage au-delà des capacités d’un seul serveur  
+- Augmenter le débit de requêtes (scalabilité horizontale)  
+
+## Points d'attention
+
+- Continuer à fonctionner malgré l’ajout/retrait de nœuds  
+- Maintenir un système équilibré via **rebalancing**
+
+---
+
+# Deux grandes familles de partitionnement
+
+## 1) Key Range Partitioning
+- Clés triées contenus dans des partitions par intervalles  
+- ✔️ Permet des **range queries efficaces** 
+- ❌ Risque de *hot spots* si les clés récentes/chauffées se concentrent dans une zone : 
+- Rebalancing via **split automatique** (HBase, RethinkDB...)
+
+---
+
+# 2) Hash Partitioning
+
+- Hash(key) → bien réparti → moins de risques de hot spots  
+- ❌ Perte de l’ordre → **range queries inefficaces**  
+- ✔ Souvent : **nombre fixe de partitions** → réassignation lors de l'ajout/retrait d’un nœud  
+
+---
+
+# Approches hybrides
+
+Exemple : **primary key composite**  
+- Premier champ → choisir la partition  
+- Autres champs → maintenir l’ordre local pour range scans
+
+Combine les avantages des deux mondes.
+
+---
+
+
+<!-- slide -->
+# Partitionnement et index secondaire
+
+## 1) Index Local (Document-Partitioned)
+
+✔ Écriture simple : une seule partition est modifiée  
+❌ Lecture coûteuse : nécessite **scatter/gather** sur toutes les partitions
+
+## 2) Index global (Partitionnement par term)
+
+✔ Lecture rapide : une seule partition de l’index est consultée  
+❌ Écriture complexe : doit mettre à jour plusieurs partitions de l’index
+
+---
+
+# Routing des requêtes
+
+Plusieurs stratégies pour diriger une requête vers le bon nœud :
+
+1. **Client contacte n’importe quel nœud** (qui redirige si nécessaire)
+2. **Tier de routage** dédié
+3. **Client partition-aware** (connaît la topologie)
+
+Mécanismes utilisés : ZooKeeper, gossip ...
+
+---
 <center>
 
 ![](./img/work-in-progress.jpeg)
