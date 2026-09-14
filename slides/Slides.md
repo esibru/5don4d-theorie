@@ -3,7 +3,7 @@ title       : Base de donnée 4
 author      : Sébastien Drobisz
 description : Supports de l'UE 5DON4D.
 keywords    : NoSQL, distribué, dénormalisation
-marp        : false
+marp        : true
 paginate    : true
 theme       : sdr
 footer      : "SDR - 5DON4D"
@@ -23,10 +23,17 @@ footer      : "SDR - 5DON4D"
 
 # Objectifs pédagogiques
 
-- Comprendre la mouvence **NoSQL**.
+- Comprendre et mettre en application les points forts d'un **SGBDR**.
+- Comprendre et mettre en application les points forts de différents **SGBD NoSQL**.
 - Critiquer les forces et les faiblesses des différents modèles de données.
 - Adapter la configuration d'un système distribué à certains scénarios
 - Concevoir un système multi-modèle adapté.
+
+---
+
+<!-- _class: cite -->
+
+5don4 — Une histoire de compromis
 
 ---
 
@@ -40,28 +47,598 @@ footer      : "SDR - 5DON4D"
 --- 
 
 L'**évaluation** repose sur 
-* la réalisation d'un système **polyglotte** illustrant la gestion de données diverses dans une application moderne.
+* la réalisation d'un système **polyglotte** qui vous servira de support pour évaluer la compréhension de la gestion de données dans une application moderne.
 * un examen théorique.
 
 ---
 
-# Plan du cours
+# Plan du cours (en cours de révision)
 
+* Rappel des concepts des SGBDR
 * Introduction au NoSQL
 * Introduction aux 4 modèles de données "typiques"
+* Réflexion sur les agrégats
 * Concepts de systèmes distribués
   * CAP - BASE
   * Réplication
   * Sharding
-* Réflexion sur les agrégats
-* Série chronologique DB
+<!-- * Série chronologique DB
 * NewSQL
-* Recherche de données
+* Recherche de données -->
 
 ---
+
+# Rappels : systèmes de gestion de bases de données
+
+---
+
+# Avant de commencer...
+
+Vous utilisez une application bancaire.
+
+Vous effectuez un virement de **100 €** :
+
+**Alice → Bob**
+
+Que doit garantir le système ?
+
+---
+
+# Quelques garanties attendues
+
+Lors d'un virement de **100 €** :
+
+- l'argent doit être retiré du compte d'Alice ;
+- l'argent doit être ajouté au compte de Bob ;
+- les deux opérations doivent réussir **ensemble** ;
+- deux virements simultanés ne doivent pas corrompre les soldes ;
+- une panne ne doit pas faire disparaître un virement validé.
+
+> Ces problèmes font partie des responsabilités d'un **SGBD**.
+
+---
+
+# Qu'est-ce qu'une base de données ?
+
+Une **base de données** est un ensemble organisé de données persistantes.
+
+Exemples :
+
+- étudiants et inscriptions ;
+- comptes et transactions bancaires ;
+- produits et commandes ;
+- utilisateurs et publications ;
+- mesures provenant de capteurs.
+
+Mais une base de données n'est **pas** un SGBD.
+
+---
+
+# Base de données ≠ SGBD
+
+**Base de données**
+
+> Les données organisées et persistantes.
+
+**SGBD — Système de Gestion de Bases de Données**
+
+> Le logiciel chargé de **stocker, organiser, interroger et protéger** ces données.
+
+Exemples : PostgreSQL, MySQL, MongoDB, Redis, Neo4j...
+
+---
+
+# Pourquoi ne pas utiliser des fichiers ?
+
+Imaginons :
+
+```text
+students.csv
+courses.csv
+registrations.csv
+```
+
+> Cela fonctionne... jusqu'à ce que plusieurs applications veuillent :
+
+- modifier les mêmes données ;
+- garantir leur cohérence ;
+- rechercher efficacement ;
+- gérer les pannes ;
+- contrôler les accès.
+
+---
+
+# Le rôle du SGBD
+
+Un SGBD prend notamment en charge :
+
+- la persistance ;
+- l'organisation des données ;
+- les requêtes ;
+- les index ;
+- les contraintes d'intégrité ;
+- les accès concurrents ;
+- les transactions ;
+- la récupération après une panne ;
+- les droits d'accès.
+
+---
+
+# Le modèle relationnel
+
+Dans un SGBD relationnel, les données sont organisées sous forme de relations.
+
+En pratique :
+
+```text
+STUDENT
+
+id | name   | city
+---|--------|----------
+1  | Alice  | Mons
+2  | Bob    | Namur
+3  | Chloé  | Charleroi
+```
+
+Une relation est généralement représentée par une **table**.
+
+---
+Un peu de vocabulaire
+
+```text
+STUDENT
+
+id | name   | city
+---|--------|----------
+1  | Alice  | Mons
+2  | Bob    | Namur
+```
+
+- **relation** → STUDENT
+- **attribut** → name
+- **tuple** → (1, Alice, Mons)
+- **domaine** → valeurs autorisées pour un attribut
+- **clé primaire** → id
+
+---
+
+# Les clés
+
+Une **clé primaire** identifie un tuple de manière unique.
+
+```sql
+CREATE TABLE student (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(100)
+);
+```
+
+Un **clé étrangère** établit une référence vers une autre relation.
+```sql
+student_id INTEGER REFERENCES student(id)
+```
+
+---
+
+# Les contraintes
+
+Le SGBD peut garantir certaines propriétés des données.
+
+```sql
+CREATE TABLE account (
+    id INTEGER PRIMARY KEY,
+    owner VARCHAR(100) NOT NULL,
+    balance DECIMAL(10,2)
+        CHECK (balance >= 0)
+);
+```
+
+Ici :
+```sql
+balance = -200
+```
+est un **état interdit**.
+
+---
+
+# Pourquoi les contraintes sont-elles importantes ?
+
+## Sans contrainte :
+
+```
+Application A ──┐
+                │
+Application B ──┼──► Base de données
+                │
+Application C ──┘
+```
+
+> Leeerroooy jeeennnnnnkkkiiiiiinnnnssssssssss — at least he has chicken.
+
+---
+
+# Pourquoi les contraintes sont-elles importantes ?
+
+## Avec les contraintes :
+
+```
+Applications
+     │
+     ▼
+    SGBD
+     │
+     ├── PRIMARY KEY
+     ├── FOREIGN KEY
+     ├── UNIQUE
+     ├── NOT NULL
+     └── CHECK
+```
+
+Les règles sont garanties **au niveau des données**.
+
+---
+# SQL est déclaratif
+
+Considérons :
+
+```sql
+SELECT name
+FROM student
+WHERE city = 'Mons';
+```
+
+Nous décrivons :
+
+> ce que nous voulons
+
+mais pas :
+
+> comment le trouver
+
+Le SGBD choisit une stratégie d'exécution.
+
+---
+
+# Comment trouver les données ?
+
+
+```sql
+SELECT *
+FROM student
+WHERE id = 48392;
+```
+Approche naïve :
+
+1 → 2 → 3 → 4 → ... → 48392
+
+Le SGBD pourrait devoir parcourir toute la table.
+
+C'est un **table scan**.
+
+---
+
+# Les index
+
+Un index est une structure auxiliaire permettant de retrouver plus rapidement des données.
+
+```text
+                 [50]
+                /    \
+             [20]    [80]
+             / \      / \
+           ... ...  ... ...
+```
+
+Une structure courante : **B-tree**
+
+---
+
+# Un index : toujours une bonne idée ?
+
+Pas nécessairement.
+
+## Un index :
+
+<div class="columns"> <div>
+<strong>✓ améliore</strong>
+
+les recherches
+
+``` sql
+WHERE email = ?
+```
+
+les tris
+
+``` sql
+ORDER BY date
+```
+</div> <div>
+<strong>✗ coûte</strong>
+
+- de l'espace disque
+- et doit être mis à jour lors des :
+  - INSERT
+  - UPDATE
+  - DELETE
+</div> </div>
+
+---
+
+# Un compromis récurrent
+
+Ajouter une structure pour accélérer les **lectures** implique souvent davantage de travail lors des **écritures**.
+
+```text
+             INDEX
+
+lecture      +++++
+écriture     ---
+stockage     ---
+```
+
+Nous retrouverons régulièrement ce type de compromis dans les systèmes NoSQL.
+
+---
+
+# Comment savoir ce que fait le SGBD ?
+
+De nombreux SGBD permettent d'inspecter le plan d'exécution.
+
+Avec PostgreSQL :
+
+```sql
+EXPLAIN
+SELECT *
+FROM student
+WHERE id = 48392;
+```
+
+---
+
+<!-- _class: transition -->
+Transactions
+
+*Que se passe-t-il lorsqu'une opération métier nécessite plusieurs modifications ?*
+
+---
+
+# Un virement bancaire
+
+Alice possède 1 000 €.
+
+Bob possède 500 €.
+
+Alice transfère 100 € à Bob.
+
+---
+
+Requêtes
+```sql
+UPDATE account
+SET balance = balance - 100
+WHERE id = 'Alice';
+
+UPDATE account
+SET balance = balance + 100
+WHERE id = 'Bob';
+```
+Résultat attendu :
+
+```text
+Alice: 900€
+Bob: 600€
+```
+
+---
+
+# Mais...
+
+Que se passe-t-il dans le scénario de panne suivant ?
+
+```text
+
+Alice : 1000 €
+Bob   :  500 €
+
+UPDATE Alice -100
+        │
+        ▼
+Alice : 900 €
+Bob   : 500 €
+        │
+        💥
+       PANNE
+```
+
+Nous avons perdu 100 €.
+
+---
+
+# transaction
+
+Une **transaction** regroupe plusieurs opérations en une unité logique.
+
+```sql
+BEGIN;
+
+UPDATE account
+SET balance = balance - 100
+WHERE id = 'Alice';
+
+UPDATE account
+SET balance = balance + 100
+WHERE id = 'Bob';
+
+COMMIT;
+```
+---
+
+`COMMIT` signifie :
+
+La transaction est terminée avec succès et ses modifications peuvent être validées.
+
+
+```text
+BEGIN ──► opérations ──► COMMIT
+                           │
+                           ▼
+                        validé
+```
+
+---
+
+# ROLLBACK
+
+Si quelque chose se passe mal :
+
+```sql
+BEGIN;
+
+UPDATE ...
+UPDATE ...
+
+ROLLBACK;
+```
+Les modifications de la transaction sont annulées.
+
+---
+
+# Mais ce n'est pas le seul problème...
+
+Imaginons maintenant deux transactions simultanées.
+
+Solde initial : **100 €**
+
+Deux applications veulent modifier ce compte.
+
+> Que peut-il se passer ?
+
+---
+
+# Concurrence
+
+```text
+Transaction A              Transaction B
+
+READ → 100                 READ → 100
+
++ 20                       - 30
+
+WRITE 120                  WRITE 70
+```
+
+Résultat final : **70 €**
+
+Mais nous attendions : **90 €**
+
+⚠️ Une modification vient de disparaître. ⚠️
+
+---
+
+# Le SGBD doit donc gérer...
+
+```text
+                    Transactions
+                         │
+          ┌──────────────┼──────────────┐
+          ▼              ▼              ▼
+       erreurs        pannes        concurrence
+```
+Nous avons besoin de garanties plus précises.
+
+---
+
+<!-- _class: transition -->
+
+ACID
+
+Quatre propriétés traditionnellement associées aux transactions.
+
+---
+
+# A — Atomicité
+
+*Une transaction est exécutée entièrement ou pas du tout.*
+
+Pour notre virement :
+
+```text
+Alice -100  ✓
+Bob   +100  ✓
+```
+ou :
+
+```text
+Alice -100  ✗
+Bob   +100  ✗
+```
+mais jamais :
+
+```text
+Alice -100  ✓
+Bob   +100  ✗
+```
+
+---
+
+# C — Cohérence
+
+*Une transaction valide fait passer la base d'un état valide à un autre état valide.*
+
+Exemple d'invariant :
+
+```text
+balance >= 0
+```
+
+ou :
+
+```text
+une inscription référence
+un étudiant existant
+```
+
+Les contraintes participent au maintien de cette cohérence.
+
+---
+# Attention au mot « cohérence » ou « consistency »
+
+Le mot **consistency** est malheureusement utilisé pour plusieurs concepts.
+
+## ACID
+
+Respect des règles et invariants de la base.
+
+---
+
+## Systèmes distribués
+
+Cohérence entre différentes copies des données.
+
+```text
+ACID consistency ≠ replica consistency
+```
+
+Nous rencontrerons la seconde signification plus tard
+
+Les contraintes participent au maintien de cette cohérence.
+
+---
+
+
+
+---
+
 <!-- _class: transition2 -->
 
-Cours 01 : Introduction au NoSQL
+Zone en chantier. Fly you fools !!!
+
+---
+
+<!-- _class: transition2 -->
+
+Cours XX : Introduction au NoSQL
 
 ---
 
@@ -395,7 +972,7 @@ Au final, il est préférable de voir le NoSQL comme une mouvence. Stocker les d
 ---
 <!-- _class: transition2 -->
 
-Cours 02 : Modèles de données "agrégat"
+Cours XX : Modèles de données "agrégat"
 
 ---
 
