@@ -626,9 +626,290 @@ Les contraintes participent au maintien de cette cohérence.
 
 ---
 
+# I — Isolation
 
+Deux transactions peuvent s'exécuter concurremment.
+
+Mais leurs interactions doivent être contrôlées.
+
+```text
+T1 ──────────────┐
+                 ├──► SGBD
+T2 ──────────────┘
+```
+
+L'objectif est d'éviter certaines anomalies liées aux **accès concurrents**.
 
 ---
+
+D — Durabilité
+
+Après :
+
+```sql
+COMMIT;
+```
+
+le SGBD annonce que la **transaction est validée**.
+
+Même si la machine tombe en panne juste après :
+
+```text
+COMMIT
+   │
+   ▼
+   ✓
+   │
+   💥
+```
+
+les données validées doivent pouvoir être récupérées.
+
+---
+
+ACID en quatre questions
+
+| |	Question | 
+|---|---|
+|A | Que se passe-t-il si l'opération échoue au milieu ?|
+|C | Les règles de la base restent-elles respectées ?|
+|I | Que se passe-t-il si plusieurs transactions s'exécutent simultanément ?|
+|D | Que se passe-t-il après COMMIT si le serveur tombe en panne ?|
+
+---
+
+# À vous !
+
+Une commande contient :
+
+```text
+Order
+ ├── OrderLine A
+ ├── OrderLine B
+ └── Payment
+ ```
+
+La commande est créée, mais une panne survient avant la création du paiement.
+
+Quelle propriété ACID est principalement concernée ?
+
+---
+
+# À vous !
+
+Une transaction produit :
+
+```text
+balance = -50 €
+```
+
+alors que la règle métier impose :
+
+```text
+balance >= 0
+```
+
+Quelle propriété ACID est principalement concernée ?
+
+---
+
+# À vous !
+
+Deux utilisateurs modifient simultanément la même donnée et l'une des modifications est perdue.
+
+Quelle propriété ACID est principalement concernée ?
+
+---
+
+# À vous !
+
+Le SGBD répond :
+
+```text
+COMMIT ✓
+```
+
+Une seconde plus tard :
+
+```text
+💥 panne électrique
+```
+
+Après redémarrage, la transaction a disparu.
+
+Quelle propriété ACID n'a pas été respectée ?
+
+---
+
+<!-- _class: transition -->
+Normalisation des données
+
+---
+
+# Normalisation des données
+
+La **normalisation** consiste à organiser les données afin de :
+
+- limiter la **redondance**
+- éviter les **incohérences**
+- faciliter les **mises à jour**
+- garantir l'**intégrité** des données
+
+---
+
+## Exemple
+
+Avec une seule table :
+
+| id_commande | client | adresse_client | produit | prix |
+|-------------|--------|----------------|---------|------|
+| 1 | Alice | Bruxelles | Clavier | 80 € |
+| 2 | Alice | Bruxelles | Souris | 30 € |
+
+➡️ Les informations concernant **Alice sont répétées**.
+
+---
+
+## Après normalisation
+
+On sépare les différentes entités :
+
+**CLIENT**
+
+| id | nom | adresse |
+|----|-----|---------|
+| 12 | Alice | Bruxelles |
+
+**COMMANDE**
+
+| id | client_id |
+|----|-----------|
+| 1 | 12 |
+| 2 | 12 |
+
+---
+
+**PRODUIT / LIGNE_COMMANDE**
+
+Les relations permettent ensuite de **reconstruire l'information**
+avec des jointures.
+
+> On cherche avant tout à stocker les données de manière
+> **cohérente et structurée**.
+
+La question : Comment vais-je intérroger mes données ? N'est que peux considérée ici.
+
+---
+
+<!-- _class: transition -->
+# Dénormalisation des données
+
+---
+
+# Normaliser... toujours ?
+
+La **normalisation** vise notamment à éviter :
+
+- la redondance des données ;
+- les anomalies de mise à jour ;
+- les incohérences.
+
+Mais une base parfaitement normalisée peut nécessiter :
+
+- davantage de jointures ;
+- davantage de calculs ;
+- des requêtes plus complexes ou coûteuses.
+
+> Il peut parfois être intéressant de **dupliquer volontairement une information**.
+
+---
+
+# Dénormalisation
+
+La **dénormalisation** consiste à stocker volontairement une information
+qui pourrait être **retrouvée ou calculée à partir d'autres données**.
+
+Exemple :
+
+```text
+ORDER
+─────────────────────────
+id
+customer_id
+...
+
+ORDER_LINE
+─────────────────────────
+order_id
+quantity
+unit_price
+```
+
+---
+
+Le montant total peut être calculé :
+
+```sql
+SELECT SUM(quantity * unit_price)
+FROM order_line
+WHERE order_id = 42;
+```
+
+Mais on pourrait aussi stocker :
+
+```text
+ORDER
+─────────────────────────
+id
+customer_id
+total_amount  ← donnée calculée
+```
+
+* **Avantage :** lecture plus rapide.
+* **Inconvénient :** `total_amount` doit rester cohérent avec les lignes de commande.
+
+---
+
+# Récapitulatif
+
+Aujourd'hui :
+
+```text
+                  SGBD
+                   │
+       ┌───────────┼───────────┐
+       ▼           ▼           ▼
+    données     requêtes   transactions
+       │           │           │
+ contraintes    index         ACID
+```
+
+Un SGBD ne se contente donc pas de stocker des données.
+
+Il fournit des garanties sur leur manipulation.
+
+---
+
+# Et maintenant ?
+
+Jusqu'ici, nous avons implicitement supposé :
+
+```text
+  1 Application (1 client)
+             │
+             ▼
+        ┌─────────┐
+        │  SGBD   │
+        └─────────┘
+             │
+             ▼
+          disque
+```
+
+Que se passe-t-il lorsque plusieurs transactions, plusieurs machines et plusieurs copies des données entrent en jeu ?
+
+---
+
 
 <!-- _class: transition2 -->
 
