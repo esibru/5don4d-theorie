@@ -646,7 +646,7 @@ L'objectif est d'éviter certaines anomalies liées aux **accès concurrents**.
 
 ---
 
-D — Durabilité
+# D — Durabilité
 
 Après :
 
@@ -1014,6 +1014,25 @@ stock = 10 - 6         stock = 10 - 5
 ```
 
 Que peut-il se passer ?
+
+---
+
+# Deadlock
+
+```text
+Transaction A                 Transaction B
+
+LOCK A                        LOCK B
+   │                             │
+   ▼                             ▼
+attend B ◄────────────────── attend A
+```
+
+Les deux transactions attendent indéfiniment.
+
+C'est un *deadlock*.
+
+Le SGBD peut détecter la situation et annuler une transaction.
 
 ---
 
