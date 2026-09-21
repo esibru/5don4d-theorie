@@ -1104,7 +1104,7 @@ qui n'a finalement jamais existé dans un état validé.
 
 ---
 
-Phantom Read
+# Phantom Read
 
 Une transaction effectue :
 
@@ -1124,7 +1124,7 @@ Une nouvelle ligne est « apparue ».
 
 ---
 
-Isolation
+# Isolation
 
 Le I de ACID :
 
