@@ -1337,9 +1337,517 @@ Tables
 
 ---
 
-```text
+# Procédure stockée
+
+Une procédure stockée est du code exécuté dans le SGBD.
+
+## Par exemple :
+
+```sql
+CALL transfer_money(1, 2, 100);
 ```
 
+La procédure peut réaliser plusieurs opérations :
+
+```text
+transfer_money()
+      │
+      ├── vérifier le solde
+      ├── débiter Alice
+      ├── créditer Bob
+      └── enregistrer le transfert
+```
+
+---
+
+# Pourquoi une procédure stockée ?
+
+## Quelques avantages :
+
+- logique proche des données ;
+- plusieurs opérations regroupées ;
+- réduction des échanges réseau ;
+- possibilité de gérer une transaction ;
+- logique commune à plusieurs applications.
+
+## Mais également :
+
+- dépendance au SGBD ;
+- logique métier répartie entre application et base ;
+- maintenance parfois plus difficile.
+
+---
+
+# Trigger
+
+Un trigger exécute automatiquement une action lorsqu'un événement se produit.
+
+```text
+        INSERT order
+             │
+             ▼
+          TRIGGER
+             │
+             ▼
+       journalisation
+```
+
+Exemples d'événements :
+
+```text
+INSERT
+UPDATE
+DELETE
+```
+
+---
+
+# Question
+
+Nous avons :
+
+```text
+Application
+     │
+     ▼
+INSERT INTO orders ...
+     │
+     ▼
+   Trigger
+     │
+     ▼
+UPDATE statistics ...
+```
+
+- ✅ Quel avantage ?
+- ❌ Quel risque ?
+
+---
+
+# Une idée importante
+
+Avec les triggers et procédures stockées :
+
+```text
+Une écriture
+    │
+    ▼
+peut provoquer
+    │
+    ▼
+d'autres écritures
+```
+
+Gardez cette idée en tête.
+
+Elle deviendra importante lorsque les données seront réparties sur plusieurs machines.
+
+---
+
+# 3. Durabilité
+
+## Comment le SGBD peut-il tenir sa promesse ?
+
+---
+
+## Le D de ACID
+
+Le SGBD répond :
+
+```text
+COMMIT ✓
+```
+
+Puis immédiatement : 💥
+
+## Après redémarrage...
+
+la transaction doit toujours être présente.
+
+**Comment est-ce possible ?**
+
+---
+
+# Mémoire ≠ stockage durable
+
+La mémoire vive est rapide :
+
+```text
+ RAM 
+ ↑↑↑
+rapide
+```
+
+mais son contenu peut être perdu lors d'une panne.
+
+Le disque / SSD est persistant :
+
+```text
+Stockage
+    ↓
+plus lent
+```
+
+Le SGBD doit donc concilier : *performance + durabilité*
+
+---
+
+# Write-Ahead Log
+
+Une technique fondamentale :
+
+## WAL — Write-Ahead Log
+
+Principe simplifié :
+
+> Avant de considérer une modification comme durable, le SGBD écrit suffisamment d'informations dans un journal persistant.
+
+---
+
+# Principe du WAL
+
+```text
+             UPDATE
+                │
+                ▼
+        ┌───────────────┐
+        │      WAL      │
+        └───────────────┘
+                │
+                ▼
+             COMMIT
+                │
+                ▼
+        pages de données
+```
+
+Les pages de données peuvent être écrites plus tard.
+
+---
+
+# Pourquoi un journal ?
+
+Après une panne :
+
+```text
+💥
+│
+▼
+redémarrage
+│
+▼
+lecture du journal
+│
+▼
+récupération
+```
+
+Le SGBD peut utiliser le journal pour retrouver un état cohérent.
+
+---
+
+# Le journal aura une autre utilité...
+
+Nous venons de voir :
+
+```text
+Transaction
+     │
+     ▼
+    WAL
+```
+
+Le WAL représente une suite ordonnée de modifications.
+
+## Que pourrait-on faire de cette suite si nous avions...
+
+**une deuxième machine ?**
+
+---
+
+# 4. Une seule machine...
+
+## ...est-ce toujours suffisant ?
+
+---
+
+# Notre architecture jusqu'ici
+
+```text
+       Clients
+          │
+          ▼
+     Application
+          │
+          ▼
+     ┌─────────┐
+     │  SGBD   │
+     └─────────┘
+          │
+          ▼
+       Stockage
+```
+
+Simple. ⚠️ **Et souvent parfaitement suffisant.** ⚠️
+
+---
+
+# Problème 1
+
+Notre base contient :
+
+**500 Go**
+
+Puis :
+
+**1 To**
+
+Puis :
+
+**50 To**
+
+## Que faisons-nous ?
+
+---
+
+# Scale up
+
+## Première solution :
+
+Utiliser une machine plus puissante.
+
+```text
+CPU     ↑
+RAM     ↑
+Disque  ↑
+```
+
+C'est le scaling vertical ou scale up.
+
+**Simple...
+mais pas illimité.**
+
+---
+
+# Problème 2
+
+Notre serveur peut traiter :
+
+```text
+10 000 requêtes/s
+```
+
+Nous devons maintenant en traiter :
+
+```text
+100 000 requêtes/s
+```
+
+Une seule machine devient un goulot d'étranglement.
+
+---
+
+# Scale out
+
+Autre possibilité :
+
+```text
+             Application
+                  │
+        ┌─────────┼─────────┐
+        ▼         ▼         ▼
+      Node A    Node B    Node C
+```
+
+Ajouter plusieurs machines :
+
+**scaling horizontal / scale out**
+
+Mais une question apparaît immédiatement...
+
+---
+
+# Où sont les données ?
+
+Solution possible :
+
+```text
+Node A          Node B          Node C
+──────          ──────          ──────
+A → H           I → Q           R → Z
+```
+
+Nous avons réparti les données.
+
+> **Partitionnement**
+
+---
+
+# Problème 3
+
+Notre serveur fonctionne parfaitement.
+
+```text
+Jusqu'au jour où...
+
+             💥
+        ┌─────────┐
+        │  SGBD   │
+        └─────────┘
+```
+
+**Que deviennent nos utilisateurs ?**
+
+---
+
+# Plusieurs copies ?
+
+Nous pourrions avoir :
+
+```text
+            données
+                 │
+       ┌─────────┼─────────┐
+       ▼         ▼         ▼
+    Node A     Node B     Node C
+      copie      copie      copie
+```
+
+Si une machine disparaît, les données existent ailleurs.
+
+> Réplication
+
+---
+
+# Facile ?
+
+Nous écrivons :
+
+```text
+x ← 42
+```
+
+sur trois machines :
+
+```text
+       x ← 42
+      /      \
+     ▼        ▼
+ x ← 42     x ← 42
+```
+
+Mais...
+
+---
+
+# Et si le réseau tombe ?
+
+```text
+              WRITE x ← 43
+                   │
+             ┌─────┴─────┬──────x─────┐
+             ▼           ▼            ▼   
+          Node A       Node B       Node C
+          x ← 43       x ← 43       x = 42
+```
+
+Quelle est maintenant la valeur de x ?
+
+---
+
+# Et si deux utilisateurs écrivent ?
+
+```text
+Utilisateur A                  Utilisateur B
+     │                              │
+     ▼                              ▼
+ x = "Alice"                    x = "Bob"
+     │                              │
+     ▼                              ▼
+  Node A                         Node C
+```
+
+Les deux écritures ont lieu pratiquement simultanément.
+
+> **Laquelle gagne ?**
+
+---
+
+# Nous avons résolu un problème...
+
+Nous voulions :
+
+- plus de capacité ;
+- plus de performances ;
+- plus de disponibilité.
+
+Nous avons introduit :
+
+- plusieurs machines ;
+- plusieurs copies ;
+- des communications réseau ;
+- des pannes partielles ;
+- des écritures concurrentes.
+
+---
+
+# ...et créé de nouveaux problèmes
+
+```text
+                 Base distribuée
+                       │
+       ┌───────────────┼────────────────┐
+       ▼               ▼                ▼
+  Réplication    Partitionnement    Cohérence
+       │               │                │
+       ▼               ▼                ▼
+   plusieurs       répartir les      quelle valeur
+    copies            données         est correcte ?
+```
+
+---
+
+# Une différence fondamentale
+
+## Sur une machine :
+
+Machine 💥
+
+> Le système fonctionne ou ne fonctionne plus.
+
+---
+
+## Dans un système distribué :
+
+```text
+Node A ✓
+
+Node B ✓
+
+Node C ?
+
+Réseau A ↔ B ✓
+
+Réseau B ↔ C ✗
+```
+
+Une partie du système peut fonctionner pendant qu'une autre ne fonctionne plus.
+
+---
+
+# La suite de 5DON4
+
+Nous allons maintenant étudier comment les systèmes de données gèrent ces problèmes :
+
+* Modèles de données
+* Réplication
+* Partitionnement
+* Transactions distribuées
+* Cohérence
+
+Et nous allons découvrir qu'il existe rarement une solution parfaite.
+
+Il s'agit surtout de comprendre les... **compromis**.
 
 ---
 <center>
