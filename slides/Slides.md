@@ -1017,25 +1017,6 @@ Que peut-il se passer ?
 
 ---
 
-# Deadlock
-
-```text
-Transaction A                 Transaction B
-
-LOCK A                        LOCK B
-   │                             │
-   ▼                             ▼
-attend B ◄────────────────── attend A
-```
-
-Les deux transactions attendent indéfiniment.
-
-C'est un *deadlock*.
-
-Le SGBD peut détecter la situation et annuler une transaction.
-
----
-
 # Lost Update
 
 ```text
@@ -1258,6 +1239,25 @@ LOCK account A
 ```
 
 Que peut-il se passer ?
+
+---
+
+# Deadlock
+
+```text
+Transaction A                 Transaction B
+
+LOCK A                        LOCK B
+   │                             │
+   ▼                             ▼
+attend B ◄────────────────── attend A
+```
+
+Les deux transactions attendent indéfiniment.
+
+C'est un *deadlock*.
+
+Le SGBD peut détecter la situation et annuler une transaction.
 
 ---
 
