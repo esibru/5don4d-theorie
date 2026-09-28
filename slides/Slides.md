@@ -1882,7 +1882,7 @@ Il s'agit surtout de comprendre les... **compromis**.
 
 # Partie 03 — Introduction au NoSQL
 
-## Concurrence, logique, durabilité et limites
+## Histoire, base de donnée intégrative & applicative
 
 ### 5DON4D — Bases de données avancées
 
@@ -2226,7 +2226,7 @@ Au final, il est préférable de voir le NoSQL comme une mouvence. Stocker les d
 
 # Partie 04 — Modèles de données *agrégat*
 
-## SGBD, modèle Relationnel, ACID, Normalisation, Dénormalisation
+## Modèles de données et agrégats
 
 ### 5DON4D — Bases de données avancées
 
