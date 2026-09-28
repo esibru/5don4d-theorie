@@ -72,7 +72,7 @@ L'**évaluation** repose sur
 
 <!-- _class: transition  -->
 
-# Rappels SGBDR — Partie 01
+# Partie 01 — Rappels SGBDR
 
 ## SGBD, modèle Relationnel, ACID, Normalisation, Dénormalisation
 
@@ -950,7 +950,7 @@ Que se passe-t-il lorsque plusieurs transactions, plusieurs machines et plusieur
 
 <!-- _class: transition  -->
 
-# Rappels SGBD — Partie 02
+# Partie 02 — Rappels SGBD
 
 ## Concurrence, logique, durabilité et limites
 
@@ -1880,7 +1880,7 @@ Il s'agit surtout de comprendre les... **compromis**.
 
 <!-- _class: transition  -->
 
-# Introduction au NoSQL — Partie 03
+# Partie 03 — Introduction au NoSQL
 
 ## Concurrence, logique, durabilité et limites
 
@@ -2224,7 +2224,7 @@ Au final, il est préférable de voir le NoSQL comme une mouvence. Stocker les d
 
 <!-- _class: transition  -->
 
-# Modèles de données *agrégat* — Partie 04
+# Partie 04 — Modèles de données *agrégat*
 
 ## SGBD, modèle Relationnel, ACID, Normalisation, Dénormalisation
 
@@ -2543,17 +2543,16 @@ Ne pas connaître les agrégats est-il un handicap ?
 
 # Comparaison des 3 modèles
 
+## **Key-Value** : 
+> agrégat opaque, lookup par clé uniquement
+## **Document** : 
+> agrégat transparent, requêtes internes possibles
+## **Column-Family** : 
+> agrégat en 2 niveaux (row + familles de colonnes)
+
 ---
 
-## Comparaison des 3 modèles
-
-- **Key-Value** : agrégat opaque, lookup par clé uniquement
-- **Document** : agrégat transparent, requêtes internes possibles
-- **Column-Family** : agrégat en 2 niveaux (row + familles de colonnes)
-
----
-
-## Points communs
+# Points communs
 
 - Agrégat = unité d'accès et de mise à jour
 - Optimisé pour le **cluster**
