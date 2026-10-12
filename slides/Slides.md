@@ -2591,7 +2591,7 @@ Récupération des détails du client dans le cas n°2 :
 3. on récupère l'agrégat du client.
 
 > ⚠️ Attention, la base de donnée n'aura pas connaissance de ce lien.
->    * Conséquences ?
+>    - Conséquences ?
 >
 > Certaines bdd mettent en place des méchanismes pour optimiser : index (MongoDB), metadonnée (Riak).
 ---
@@ -2888,15 +2888,13 @@ Ex: 📖 [Solution MongoDB](https://www.mongodb.com/docs/manual/core/materialize
 
 - Exemple : document *commande* contenant un résumé (*résumé de commande*)
    - Évite de parcourir tout l'objet pour une requête simple
-- Dans les bases **column-family** : vues matérialisées gérées dans d'autres familles de colonnes
-- Mise à jour possible dans la **même transaction atomique**
 
 ---
 
 ## En résumé
 
 - Les **agrégats** facilitent certains accès, mais compliquent les requêtes globales
-- Les **vues matérialisées** apportent une solution :
+* Les **vues matérialisées** apportent une solution :
   - Rapidité en lecture
   - Flexibilité d'accès
   - Mais nécessitent une gestion des mises à jour (eager ou batch)
@@ -2905,9 +2903,9 @@ Ex: 📖 [Solution MongoDB](https://www.mongodb.com/docs/manual/core/materialize
 
 # Modélisation pour les accès aux données — réflexion
 
-* Comment modéliser la bd commandes/client.
-  * pour pouvoir faire des requêtes individuelles sur les commandes.
-  * pouvoir récupérer efficacement les commandes réalisées par un client.
+- Comment modéliser la bd commandes/client.
+  - pour pouvoir faire des requêtes individuelles sur les commandes.
+  - pouvoir récupérer efficacement les commandes réalisées par un client.
 
 * Dans le cas développé, comment peut-on optimiser la requête : quelles commandes contiennent un produit donné.
 
