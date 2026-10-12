@@ -2560,11 +2560,365 @@ Ne pas connaître les agrégats est-il un handicap ?
 
 ---
 
+---
+
+<!-- _class: transition  -->
+
+# Partie 05 — Plus de détail sur les modèles de données
+
+## Association, modèle graphe, schemaless, vues
+
+### 5DON4D — Bases de données avancées
+
+---
+
+# Associations
+
+---
+
+# Rappels 
+2 cas :
+
+1. Accès client implique un accès aux commandes
+1. Accès individuels aux commandes
+
+---
+
+Récupération des détails du client dans le cas n°2 :
+
+1. on récupère l'enregistrement lié à la commande,
+2. on lit l'ID du client,
+3. on récupère l'agrégat du client.
+
+> ⚠️ Attention, la base de donnée n'aura pas connaissance de ce lien.
+>    * Conséquences ?
+>
+> Certaines bdd mettent en place des méchanismes pour optimiser : index (MongoDB), metadonnée (Riak).
+---
+
+# 3 ème modèlisation 
+## Client intégré à l'ordre
+
+``` json
+{
+  "_id": 456,
+  "customer": { "id": 123, "name": "Alice", "email": "alice@example.com" },
+  "total": 25.0
+  ...
+}
+```
+
+Pour quel cas d'utilisation ?
+
+---
+
+| Modèle                  | La base "connait" la relation ? | Requêtes croisées possibles ? | Risque d'incohérence |
+|--------------------------|----------------------------------|--------------------------------|-----------------------|
+| **SQL**                 | ✅ Oui (clé étrangère)           | ✅ Jointures puissantes         | Faible (contrainte FK et ACID) |
+| **Clé-valeur pur**      | ❌ Non (juste ID stocké)        | ❌ Non                          | Moyen (c'est à l'app de gérer) |
+| **Document (cas n°1 - par référence)** | ⚠️ Un peu (via index)          | ✅ Oui (via index)              | Moyen (vérification côté applicatif |
+| **Document (embedding)** | ❌ Non (pas de lien)            | ❌ Non  (mais pas besoin)    | Élevé (duplication) |
+| **Clé-valeur avec liens (Riak)** | ✅ Oui (via metadata)        | ⚠️ Limité (suivi de lien interne au sgbd)        | Moyen (pas de validation à l'écriture)|
+
+---
+
+<!-- _class: transition2 -->
+
+Et avec le modèle graphe ?
+
+---
+
+<center>
+
+![h:550](./img/graph-structure-example.png)
+</center>
+
+---
+
+> ## Graphe de connaissance ([wikipedia](https://en.wikipedia.org/wiki/Knowledge_graph))
+> In knowledge representation and reasoning, a *knowledge graph* is a knowledge base that uses a graph-structured data model or topology to represent and operate on data. Knowledge graphs are often used to store interlinked descriptions of entities – objects, events, situations or abstract concepts – while also encoding the free-form semantics or relationships underlying these entities.
+
+> ## Traduction & simplification
+> Un graphe de connaissances est une base de données qui utilise un graphe (sommets et arêtes) pour représenter l'information.
+Il permet de stocker des descriptions reliées entre elles concernant des entités (par exemple : objets, personnes, événements, situations ou idées abstraites) et de représenter aussi les liens qui existent entre ces entités.
+
+---
+
+<!-- _class: cite -->
+
+Trouver les livres de la catégorie bases de données écrits par un auteur apprécié par un ami.
+
+---
+
+| Modèle                  | La base "connait" l'association ? | Requêtes croisées possibles ? | Risque d'incohérence |
+|--------------------------|----------------------------------|--------------------------------|-----------------------|
+| **Graphe (Neo4j)** | ✅ Oui (objet de 1ère classe)        | ✅✅ Oui        | Faible ([first-class citizen](https://neo4j.com/news/5-factors-driving-graph-database-explosion/))|
+
+---
+
+# Dans un modèle relationnel
+
+On peut parcourir les clés étrangères à l'aide des jointures,
+
+## Exemple :
+``` sql
+SELECT DISTINCT vArrivee.nom, vArrivee.pays
+FROM ville vDepart
+JOIN troncon t1 ON vDepart.idville = t1.villeDepart
+JOIN troncon t2 ON t1.villeArrivee = t2.villeDepart
+JOIN troncon t3 ON t2.villeArrivee = t3.villeDepart
+JOIN ville vArrivee ON t3.villeArrivee = vArrivee.idville
+WHERE vDepart.nom = 'Bruxelles';
+```
+mais c'est vite couteux, difficile à écrire, lire...
+
+---
+
+Dans une base de données graphe, la plupart des requêtes servent surtout à explorer les associations entre les données.
+
+1. Point de départ : recherche par un attribut indexé
+1. suivi des arêtes
+
+---
+
+# Modèle graphe vs modèles agrégats
+* Nature différente des agrégats (voir opposé)
+* Sur un serveur unique (~~distribué dans un cluster~~)
+* ACID complet
+* Liens avec les autres sgbd NoSQL : 
+  * Augmentation d'intérêt conjointement
+  * rejet du modèle relationnel.
+
+---
+
+<!-- _class: transition2 -->
+
+# Sans schéma
+
+---
+
+<!-- _class: cite -->
+Les bases de données NoSQL sont « schemaless».
+
+---
+
+# Modèle relationnelle : Une camisole
+
+* Définir un **schéma** avant de stocker des données 
+  * Tables
+  * Colonnes (sémantique & type)
+  * contraintes
+  * ...
+* Impossible de stocker sans schéma préalable
+
+--- 
+# NoSQL : un stockage plus flexible
+
+- Pas de schéma imposé
+- Chaque type de NoSQL permet d'ajouter librement :
+  - **Clé-valeur** : n'importe quelle donnée associée à une clé
+  - **Document** : structure libre dans chaque document
+  - **Famille de colonne** : données dans les colonnes au choix
+  - **Graphe** : nouvelles arêtes et propriétés ajoutées librement 
+
+---
+
+# Avantages du *sans schéma*
+
+* Plus grande liberté et flexibilité,
+* Pas besoin de tout prévoir à l'avance,
+* Adaptation facile au projet en cours,
+* Suppression de données non utilisées (sans effets de bord),
+* Ajout de données sans faire des "trous".
+
+---
+
+# Limites du *Schemaless*
+
+- Programmes supposent une **structure implicite** / **schéma à la lecture** :
+  - Ex. champ `billingAddress` ≠ `addressForBilling` (valeur ≠ "Bob")
+  - Les types doivent être cohérents (ex. `5` ≠ `"five"`)
+- Le schéma est **dans le code applicatif** :
+  - Rend la compréhension des données plus difficile (doc)
+  - La BD ne peut pas optimiser ni valider
+
+---
+
+# Pourquoi garder un schéma ?
+
+* Schéma fixe pour :
+  * Cohérence
+  * Optimisation
+  * Validation
+* La **rejet du schéma** par NoSQL est une rupture importante
+
+---
+
+> ## *Schéma implicite*
+> Ensemble de supposition - à propos de la structure de donnée - faites dans l'application qui manipule les données.
+
+---
+
+# Problèmes pratiques au schéma implicite
+
+* Pour comprendre les données il peut être nécessaire de plonger de le code
+   > ⚠️ Attention, aussi valide dans le modèle relationnelle (column1, column2...).
+* risques ☢️ : incohérences, incompatibilités
+* Approches possibles :
+  * Centraliser l'accès aux données : via une seule appli + API (service web)
+  * Délimiter clairement les zones accessibles par chaque appli 🤮.
+
+---
+
+# Schémas relationnels : plus flexibles qu'on ne pense
+
+* SQL permet de modifier un schéma à tout moment
+* Des colonnes peuvent être ajoutées à la volée
+* On peut stocker différentes valeurs dans une même colonne (devrions nous le faire ?) → privilégier une bdd sans schéma.
+
+---
+
+## En résumé
+
+- Le *« sans schéma »*
+  * pour 👍 : Flexibilité, adaptation rapide, gestion des données variées
+  * contre 👎 difficultés d'optimisation et de validation
+* > ## En réalité
+  > * **le schéma n'a pas disparu**, bdd ↦ app
+  > * La flexibilité s'arrête à l'horizon des agrégats.
+
+---
+
+# Validation de schéma
+
+Même si ce n'est pas dans son ADN de départ, un schéma est possible.
+
+[MongoDB — Validation de schéma ](https://www.mongodb.com/docs/manual/core/schema-validation/#schema-validation)
+
+## Recommandation : 
+
+1. Définir le schéma applicatif
+2. Utiliser le schéma de validation
+
+---
+
+<!-- _class: transition2 -->
+
+# Vues et Vues matérialisées
+
+---
+
+# Limite des modèles orientés agrégats
+
+* Pratique pour accéder à une commande complète
+* moins pour des questions globales (ex. vente total de la semaine des produit)
+* Nécessite souvent de lire **tous les ordres** → coûteux
+* Les index aident, mais on va contre la structure.
+  * à la base on veut des agrégats autonomes
+
+---
+
+> ## *Vue classique*
+> 
+> - Définie par une **requête SQL**
+> - Ne stocke pas les résultats
+> - À chaque lecture : la requête est **appelée/recalculée**
+
+---
+
+> ## [Vues matérialisées](https://www.postgresql.org/docs/current/rules-materializedviews.html)
+> * Vue dont le *resultat est persisté* sous format "relation"
+>   ``` sql
+>   CREATE MATERIALIZED VIEW mymatview AS SELECT * FROM mytab;
+>   ```
+> * ≠ tables : pas de modification directe
+> * *requête persisté*
+>   * ⟳ mise à jour
+>     ``` sql
+>     REFRESH MATERIALIZED VIEW mymatview;
+>     ```
+
+---
+
+| Caractéristique | Vue classique | Vue matérialisée |
+|-----------------|---------------|------------------|
+| **Stockage** | Non | Oui |
+| **Fraîcheur des données** | Toujours à jour | Peut être périmée |
+| **Performance lecture** | Plus lente | Très rapide |
+| **Mémoire utilisée** | Faible | Plus élevée |
+| **Cas d'usage** | Données fraîches | Requêtes lourdes et répétées + léger retard toléré |
+
+---
+
+# NoSQL et vues
+
+- Vue classique existante (potentiellement très coûteuses)
+- **vues matérialisées** (usage plus fréquent)
+  - fait des algorithmes type **Map-Reduce**
+  - Très central dans les bases orientées agrégats 
+     → requête hors agrégat fréquentes. 
+
+Ex: 📖 [Solution MongoDB](https://www.mongodb.com/docs/manual/core/materialized-views/)
+
+---
+
+## Stratégies de mise à jour
+
+* **Eager** (immédiat)
+  * Mise à jour en même temps que les données de base
+  * Fraîcheur maximale
+  * Coût élevé en écriture
+
+* **Batch** (périodique)
+  * Recalcul régulier
+  * Moins coûteux
+  * Données périmée (compréhension du métier : *ex.* produit vendu / semaine)
+
+---
+
+## Implémentations possibles hors base de données
+
+* Construire la vue en dehors de la BD et la réinjecter
+* Laisser la base calculer et maintenir la vue selon une configruation (trigger)
+* Usage d'**incremental map-reduce** (mise à jour incrémentale)
+
+---
+
+## Dénormalisation interne
+
+- Exemple : document *commande* contenant un résumé (*résumé de commande*)
+   - Évite de parcourir tout l'objet pour une requête simple
+- Dans les bases **column-family** : vues matérialisées gérées dans d'autres familles de colonnes
+- Mise à jour possible dans la **même transaction atomique**
+
+---
+
+## En résumé
+
+- Les **agrégats** facilitent certains accès, mais compliquent les requêtes globales
+- Les **vues matérialisées** apportent une solution :
+  - Rapidité en lecture
+  - Flexibilité d'accès
+  - Mais nécessitent une gestion des mises à jour (eager ou batch)
+
+---
+
+# Modélisation pour les accès aux données — réflexion
+
+* Comment modéliser la bd commandes/client.
+  * pour pouvoir faire des requêtes individuelles sur les commandes.
+  * pouvoir récupérer efficacement les commandes réalisées par un client.
+
+* Dans le cas développé, comment peut-on optimiser la requête : quelles commandes contiennent un produit donné.
+
+-> la manière de créer les agrégats dépend des lectures que nous souhaitons faire.
+
+---
+
 <center>
 
 ![](./img/work-in-progress.jpeg)
 <center>
-
 
 ---
 
