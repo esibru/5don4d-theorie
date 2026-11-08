@@ -2651,7 +2651,7 @@ Trouver les livres de la catégorie bases de données écrits par un auteur appr
 ---
 
 | Modèle                  | La base "connait" l'association ? | Requêtes croisées possibles ? | Risque d'incohérence |
-|--------------------------|----------------------------------|--------------------------------|-----------------------|
+|---|---|---|---|
 | **Graphe (Neo4j)** | ✅ Oui (objet de 1ère classe)        | ✅✅ Oui        | Faible ([first-class citizen](https://neo4j.com/news/5-factors-driving-graph-database-explosion/))|
 
 ---
@@ -2841,7 +2841,7 @@ Même si ce n'est pas dans son ADN de départ, un schéma est possible.
 ---
 
 | Caractéristique | Vue classique | Vue matérialisée |
-|-----------------|---------------|------------------|
+|---|---|---|
 | **Stockage** | Non | Oui |
 | **Fraîcheur des données** | Toujours à jour | Peut être périmée |
 | **Performance lecture** | Plus lente | Très rapide |
@@ -2910,6 +2910,473 @@ Ex: 📖 [Solution MongoDB](https://www.mongodb.com/docs/manual/core/materialize
 * Dans le cas développé, comment peut-on optimiser la requête : quelles commandes contiennent un produit donné.
 
 -> la manière de créer les agrégats dépend des lectures que nous souhaitons faire.
+
+---
+<!-- _class: transition -->
+
+<!-- _class: transition  -->
+
+# Partie 06 — Distribution des données
+
+## Introduction
+
+### 5DON4D — Bases de données avancées
+
+---
+
+# 1 - Introduction
+
+---
+
+<center>
+
+![h:500](./img/distribution-road.png)
+
+</center>
+
+---
+
+# Départ : Aucune distribution
+
+---
+
+> « Plus simple, la première des options de distribution est celle que nous recommandons le plus souvent : **aucune distribution**. »
+
+- La base de données tourne sur **une seule machine**
+  → gère **toutes les lectures et écritures**
+- Cette approche **évite toute complexité** :
+  - plus simple à administrer
+  - plus facile à raisonner pour les développeurs
+- Si possible : **préférer toujours un modèle mono-serveur**.
+
+---
+
+# Quand le mono-serveur reste pertinent
+
+Même si de nombreuses bases NoSQL sont conçues pour les **clusters** :
+
+- Le **modèle de données** du NoSQL peut mieux convenir à l’application,
+  **même sur un seul serveur**.
+- Exemple :
+  - **Bases de données graphe** → fonctionnement optimal sur un seul nœud
+  - **Document stores** ou **key-value stores** → efficaces pour des agrégats simples
+
+> ⚠️ Si l’on peut éviter la distribution, **on choisira toujours une approche mono-serveur**.
+
+---
+
+# On the road
+
+---
+
+<!-- _class: cite -->
+
+Que se passe-t-il lorsque **plusieurs machines** participent au stockage et à la récupération des données ?
+
+---
+
+# Pourquoi distribuer les données ?
+
+*  **Scalabilité**
+  Répartir la charge (lecture, écriture, volume) sur plusieurs machines.
+
+* **Tolérance aux pannes / Haute disponibilité**
+  Le système continue de fonctionner même si une machine (ou un datacenter) tombe en panne.
+
+* **Latence**
+  Servir les utilisateurs depuis des serveurs **géographiquement proches** pour réduire les délais réseau.
+
+---
+
+<!-- _class: cite -->
+
+Quelle est la différence entre un nœud, un cluster et un datacenter ?
+
+---
+
+# Cas Cassandra
+
+<center>
+
+![h:400](./img/arch_cassandra.png)
+</center>
+
+[Cluster, Datacenters, Racks and Nodes in Cassandra (Baeldung)](https://www.baeldung.com/cassandra-cluster-datacenters-racks-nodes)
+
+---
+
+
+# Monter en charge : vertical vs horizontal
+
+##  Scalabilité verticale (scale up)
+- Acheter une **machine plus puissante** : plus de CPU, RAM, disques.
+- Simple à mettre en place, mais :
+  - coût croît **plus vite que linéairement**
+  - bottlenecks (réseau...) 
+  - limites physiques (ex: nonuniform memory access) et géographiques
+
+## Scalabilité horizontale (scale out)
+- Ajouter **plusieurs machines** (nœuds) travaillant de manière distribuée.
+- Nécessite des mécanismes de coordination, mais plus flexible et résilient.
+---
+
+# Architectures possibles
+
+---
+
+### 1️⃣ Mémoire partagée (shared-memory)
+> Une seule machine avec de multiples processeurs et mémoire commune (OS unique).
+✅ Simple
+❌ Coût élevé, tolérance de panne limitée.
+
+### 2️⃣ Disque partagé (shared-disk)
+> Plusieurs machines partagent les mêmes disques via un réseau rapide.
+✅ Utilisé en entrepôts de données.
+❌ Problèmes de **verrouillage** et de **concurrence**.
+
+### 3️⃣ Sans partage (shared-nothing)
+> Chaque nœud a ses **propres CPU, RAM, disque**.
+✅ Très populaire, peu coûteux, extensible
+❌ Complexité accrue pour les développeurs.
+
+---
+
+# Entrepôt de données (data warehouse)
+
+> [Wikipedia](https://fr.wikipedia.org/wiki/Entrep%C3%B4t_de_donn%C3%A9es)
+> Un *entrepôt de données (data warehouse)* est une **base de données** regroupant une partie ou l'**ensemble des données fonctionnelles d'une entreprise**. Il entre dans le cadre de l'**informatique décisionnelle** ; son but est de fournir un ensemble de données servant de **référence unique**, utilisée pour la **prise de décisions** dans l'entreprise par le biais de **statistiques et de rapports** réalisés via des outils de reporting. 
+>
+> D'un point de vue technique, il sert surtout à 'délester' les bases de données opérationnelles des requêtes pouvant nuire à leurs performances.
+
+---
+
+<div class="columns">
+<div>
+
+![h:400](./img/data_warehouse_overview.JPG)
+[Wikipedia](https://fr.wikipedia.org/wiki/Entrep%C3%B4t_de_donn%C3%A9es#/media/Fichier:Data_warehouse_overview.JPG)
+
+</div>
+<div>
+
+> [Wikipedia](https://fr.wikipedia.org/wiki/Entrep%C3%B4t_de_donn%C3%A9es)
+> - extraction des données de production, transformations éventuelles et chargement de l'entrepôt (c'est l'ETL ou Extract, Transform and Load ou encore datapumping).
+> - on peut voir l'entrepôt de données comme une **architecture décisionnelle** capable à la fois de gérer l'**hétérogénéité** et le **changement** et dont l'enjeu est de **transformer** les données en **informations directement exploitables** par les utilisateurs du métier concerné. 
+</div>
+</div>
+
+---
+
+# Modèle "Shared-nothing" ou horizontal scaling ou scaling out
+
+## Avantages
+- Pas besoin de matériel spécialisé
+- Possibilité de répartir les données **dans plusieurs régions**
+- Réduction de la latence et meilleure résilience
+- Accessible même aux **petites entreprises** via le cloud
+
+## Mais attention
+> Plus de puissance ⟹ aussi plus de complexité à gérer (cohérence, pannes, synchronisation…)
+
+---
+
+# Réplication et Partitionnement
+
+## Réplication
+
+> Copier les **mêmes données** sur plusieurs nœuds (potentiellement dans différents lieux).
+>   * Assure la **redondance** et la **résilience** (des nœuds peuvent être indisponibles).
+>   * Peut aider à améliorer les performances.
+
+## Partitionnement (sharding)
+> Découper une grosse base de donnée en sous-ensembles (appelés *partition* ou *shard*) ; répartis sur plusieurs nœuds.
+
+---
+
+## Réplication 🤝 partitionnement
+> Les deux techniques sont souvent **combinées** ↦ compromis difficile pour réaliser, configurer, utiliser un système distribué.
+
+<center>
+
+![h:400](./img/sharding-replication.png)
+
+</center>
+
+---
+
+# Théorème CAP
+
+<div class="columns">
+<div>
+
+<center>
+
+![h:400](./img/CAP_Theorem_Euler_Diagram.png)
+
+</center>
+
+</div>
+<div>
+
+- Cohérence
+- disponibilité
+- tolérance aux partition
+* *choisissez-en deux !*
+
+</div>
+</div>
+
+---
+
+> [Wikipedia](https://en.wikipedia.org/wiki/CAP_theorem)
+> * **Disponibilité** - Chaque requête reçue par un nœud non défaillant du système doit aboutir à une réponse. (définition formulée dans le théorème CAP, par Gilbert et Lynch.)
+>   |Théorème CAP||architecture logicielle|
+>   |---|---|---|
+>   |Disponibilité (pas de délais)|≠|haute disponibilité ou faible latence|
+> * **Cohérence (~~consistance~~)** - Chaque lecture reçoit la donnée la plus récente écrite, ou une erreur.
+>   |Théorème CAP||Transaction ACID|
+>   |---|---|---|
+>   |Cohérence de réplication ou linéarisable|≠|Cohérence logique|
+> * **Tolérance aux partitions** - Le système continue de fonctionner même si un nombre arbitraire de messages est perdu (ou retardé) par le réseau entre les nœuds.
+
+---
+
+<center>
+
+![h:450](./img/cap-Julia_Evans.png)
+
+</center>
+
+> * <span class="ref">📖 [CAP - Julia Evans](https://jvns.ca/blog/2016/11/19/a-critique-of-the-cap-theorem/)</span>
+> * <Span class="ref">📖 [Martin Kleppmann - A Critique of the CAP Theorem](https://arxiv.org/abs/1509.05393)</span>
+
+---
+
+<!-- _class: transition2 -->
+
+2 - Réplication
+
+---
+
+<!-- _class: cite -->
+
+La réplication consiste à conserver une copie des mêmes données sur plusieurs machines connectées entre elles via un réseau.
+
+---
+
+# Objectifs
+
+* Garder les données proche géographiquement (↘ latence).
+* Permettre au système de continuer à fonctionner même si certains de ses nœuds tombent en panne. (↗ la disponibilité).
+* Augmenter horizontallement (scale-out) le nombre de machines qui répondent aux requêtes de lectures (↗ capacité traitement). 
+
+---
+
+# Approches
+
+> **Note**
+> - Le jeu de donnée peut tenir sur un seul nœud (pas de partition).
+> - l'enjeu réside dans le changement (pas de changement -> on copie et c'est fini).
+* 3 approches : 
+   * Réplication à *leader unique*
+   * Réplication à *multi-leader*
+   * Réplication *sans leader (P2P)*
+
+---
+
+# Compromis à considérer
+
+La réplication d’une base de données soulève de nombreux **choix techniques** :
+
+- **Réplication synchrone** ou **asynchrone** ?
+- Comment **gérer les réplicas défaillants** ?
+- Quelles **garanties de cohérence** offrir aux utilisateurs ?
+
+> Ces options varient selon les SGBD, mais les **principes généraux** sont similaires dans la plupart des systèmes.
+
+---
+
+# Faire du neuf avec du vieux
+
+> La réplication des bases de données est étudiée depuis les **années 1970** 🧠
+
+- Les **principes fondamentaux** ont peu changé, 
+  car les **contraintes du réseau** (latence, pannes, déconnexion)
+  restent les mêmes aujourd’hui.
+
+
+Ce qui a évolué :
+- L'utilisation plus générale de systèmes distribués par les développeurs applicatifs.
+  → Préconception, vulgarisation (ex: *cohérence à terme*)...
+
+⚠️Considération pour le développeur (ex: [MongoDB](https://www.mongodb.com/docs/development/))
+
+---
+
+# Comprendre la cohérence à terme
+
+> Beaucoup de malentendus entourent le concept **eventual consistency** (*C'est-à-dire, * **cohérence ~~éventuelle~~ à terme**).
+
+Dans ce chapitre, nous aborderons :
+- le **retard de réplication** (*replication lag*),
+- les garanties de lecture :
+  - **read-your-writes** (lire ce qu’on vient d’écrire),
+  - **monotonic reads** (lectures toujours cohérentes dans le temps).
+- ...
+
+**Objectif** : comprendre les **conséquences pratiques**  des choix de réplication dans un système distribué.
+
+---
+
+# Réplica
+
+Chaque nœud qui enregistre une copie de la base de donnée est appelée *Réplica*.
+
+🧩 Problème :
+> Comment s’assurer que toutes les répliques contiennent les **mêmes données** ?
+
+Chaque **écriture** doit être appliquée sur **toutes les répliques**.
+
+La méthode la plus courante : **leader-based replication** (aussi appelée **master–slave** ou **active/passive**).
+
+---
+
+# Leader & followers
+
+---
+# Principe général
+
+### Le leader
+- Une réplique est désignée comme **leader** (aussi : *master* ou *primary*).
+- Tous les **écritures** passent **uniquement par lui**.
+- Le leader **enregistre** d’abord la donnée localement.
+
+### Les followers
+- Les autres répliques sont des **followers** (*read replicas*, *slaves*, *secondaries*).
+- Le leader leur **envoie un flux de changements** (replication log / change stream).
+- Chaque follower **applique les écritures dans le même ordre** que le leader.
+
+> Ex. [MongoDB : Primary & secondary](https://www.mongodb.com/docs/manual/replication/)
+---
+
+# Lecture et écriture
+
+- **Écritures** : uniquement sur le **leader**
+- **Lectures** : possibles sur **le leader ou les followers**
+
+<center>
+
+![h:300](./img/leader-follower.png)
+</center>
+
+---
+
+# Réplication synchrone vs asynchrone
+
+---
+
+Un aspect important d’un système répliqué :
+> **La manière dont la réplication s’effectue.**
+
+Deux approches possibles :
+- **Réplication synchrone**
+- **Réplication asynchrone**
+
+> **Info**
+> - *Paramétrable* dans certaines bases relationnelles ; 
+> - *Figé dans le code* dans d’autres.
+
+---
+
+
+# Fonctionnement général
+
+1. Le client envoie une requête d’**écriture** au **leader**.
+1. Le leader enregistre la modification localement.
+1. Le leader **transmet le changement aux followers**.
+1. Le leader **confirme le succès** au client.
+
+> La différence entre *synchrone* et *asynchrone* : faut-il attendre une réponse du followers ?
+
+---
+
+<center>
+
+![h:400](./img/replica-synchrone-asynchrone.png)
+</center>
+
+* Follower 1 - réplication synchrone. Leader attend réception du ok → notification du client.
+* Follower 2 - Réplication asynchrone. Leader suppose `:writeok:` sans attendre.
+
+---
+
+> ⓘ Info
+> La mise-à-jour d'un follower se fait généralement en moins d'une seconde.
+> 
+> Circonstances de délais : 
+> - un follower subit ou récupère d'une panne ;
+> - un follower saturé ;
+> - des problèmes sur le réseau.
+
+---
+
+
+# Réplication synchrone & asynchrone
+## Avantages et inconvénients
+
+---
+
+## Réplication synchrone
+
+### ✅ Avantage :
+
+- Le follower a toujours une copie à jour et cohérente. 
+⇒ Si le leader tombe, la donnée est sûre.
+
+## ❌ Inconvénient :
+
+- Si le follower ne répond pas (panne, réseau), le leader bloque toutes les écritures jusqu'à rétablissement du follower.
+
+---
+
+## Réplication asynchrone
+
+### ✅ Avantages :
+
+- Le leader ne bloque jamais.
+- Performances plus élevées
+
+### ❌ Inconvénient :
+
+- Si le leader échoue avant la réplication, certaines écritures peuvent être perdues. 
+⇒ La durabilité n’est pas garantie.
+
+---
+
+# Réplication asynchrone et non durabilité
+
+<center>
+
+![](./img/follower_asynch_non_durable.png)
+</center>
+
+⚠️ Le client a bien reçu la confirmation d'écriture.
+✅ Reste une bonne idée s'il y a beaucoup de follower ou géographiquement distribué.
+
+---
+
+# Tout synchroniser, une bonne idée ?
+
+Si tous les followers étaient synchrones, la panne d’un seul nœud bloquerait tout le système 😱
+⇒ **impraticable** en production.
+
+## Solution si souhait de backup :
+
+- *1* unique follower synchrone.
+- Les autres sont asynchrones.
+- Un follower synchrone trop lent est remplacé.
+
+> Cette configuration s’appelle souvent : **Réplication semi-synchrone**
 
 ---
 
