@@ -3416,14 +3416,14 @@ Si tous les followers étaient synchrones, la panne d’un seul nœud bloquerait
 4. Lorsque le follower a rattrapé son retard, il se synchronise au flux comme les autres followers.
 
 ---
-
-# Au prochain cours, que faire en cas de panne ?
-
----
 <center>
 
 ![h:550](./img/setting_up_follower-no_downtime.svg)
 </center>
+
+---
+
+# Au prochain cours, que faire en cas de panne ?
 
 ---
 
