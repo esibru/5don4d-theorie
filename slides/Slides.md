@@ -3380,6 +3380,53 @@ Si tous les followers étaient synchrones, la panne d’un seul nœud bloquerait
 
 ---
 
+# Configuration d'un nouveau follower (ajout à chaud)
+
+---
+
+## Comment charger les données du leader ?
+
+<div class="columns">
+<div>
+
+1. copier les données du leader ? 
+↦ Prend du temps & Flux de données en cours !
+⇒ perte d'écriture.
+
+![](./img/setting_up_follower.svg)
+</div>
+
+<div>
+
+2. Lock de base de donnée ? 
+↦ Contre la haute disponibilité
+</div>
+</div>
+
+---
+
+## Configuration sans indisponibilité
+
+1. Création du snapshot
+2. Copie du snapshot
+3. Follower demande au Leader les changements survenus depuis le snapshot
+→ Snapshot associé à une position dans le *replication log*
+   - Postgres - LSN (Log Sequence Number)
+   - MongoDB - [oplog](https://www.mongodb.com/docs/manual/core/replica-set-oplog/)
+4. Lorsque le follower a rattrapé son retard, il se synchronise au flux comme les autres followers.
+
+---
+
+# Au prochain cours, que faire en cas de panne ?
+
+---
+<center>
+
+![h:550](./img/setting_up_follower-no_downtime.svg)
+</center>
+
+---
+
 <center>
 
 ![](./img/work-in-progress.jpeg)
